@@ -1,0 +1,17 @@
+{
+  "name": "ml-learning-guide",
+  "private": true,
+  "scripts": {
+    "build:editor": "esbuild editor-src/editor.js --bundle --format=iife --global-name=LearningEditor --minify --outfile=vendor/editor.js"
+  },
+  "dependencies": {
+    "codemirror": "6.0.2",
+    "@codemirror/view": "6.43.13",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-python": "^6.2.1"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}
