@@ -1,0 +1,26 @@
+{
+  "version": "mainline-v1",
+  "mainlineLessons": 12,
+  "libraryLessons": 48,
+  "checks": [
+    "12 lessons at 320/375/430/1280, quizzes wrong/right, persistence, numeric edge cases, legacy notes and deep links",
+    "48 library lessons mobile/desktop editors/quizzes/steps regression",
+    "Two independent reviews; first findings fixed, second no blockers"
+  ],
+  "limitations": [
+    "No human learning study",
+    "No physical phone test",
+    "No real model/API experiments in mainline"
+  ],
+  "sha256": {
+    "index.html": "b2a0541a9c3bbc029da3d838c92cd239a060fed4b90a3514f73af7aed9e51745",
+    "mainline.css": "aed6f2bc47c8008c7ca0990678ecdfa8af6fc51a81183f343012f1b4ec93246b",
+    "mainline.js": "2591fc34d6ac944deff210cbd510aaba9afe167e53b374213a219ba0bb64096d",
+    "mainline-data.js": "470591489ff9e8f4c4e401680eb66a1f526681fd4d9722b98c8579d37e47a56c",
+    "library.html": "b3facdc81e74ef06f505f5a53337af485090a396570cb0ceead47dcf1580d540",
+    "app.js": "a366069595b8ec575f69d57863b2399b91ad88b11c943aa569c3d5383df1c7df",
+    "content.js": "368413f2879a65c31e72e763658b38e209b2a8419fd01177ee9c7b1e6a191792",
+    "course.html": "65b2885227cb39ad1b55b991bf3699bef80e09dce008c150792044389ffce056",
+    "library-offline.html": "5b27c65438deb0b0c5bb8c8e7b67b89908e6b942ce682e53f30f8d212ecc3e52"
+  }
+}

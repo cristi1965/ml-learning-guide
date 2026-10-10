@@ -30,10 +30,10 @@ for f in source['files']:
  filemap[f]={'lessons':[i for i in ids if i<len(lessons)],'kind':'拓展阅读'}
 source.update(lessons=lessons,fileMap=filemap,version='project-v2')
 (root/'content.js').write_text('window.COURSE='+json.dumps(source,ensure_ascii=False)+';')
-s=(root/'index.html').read_text()
+s=(root/'library.html').read_text()
 for name in ['vendor/editor.js','content.js','runner.js','lab-ui.js','app.js']:
  s=s.replace('<script src="'+name+'"></script>','<script>'+(root/name).read_text().replace('</script','<\\/script')+'</script>')
-(root/'course.html').write_text(s)
+(root/'library-offline.html').write_text(s)
 with zipfile.ZipFile(root/'python-exercises.zip','w',zipfile.ZIP_DEFLATED) as z:
  z.writestr('README.txt','每个lesson文件为教学练习，直接python3运行。先补TODO再检查；参考答案在solutions目录。使用标准库，不执行原仓库模型。\n')
  for l in lessons:
