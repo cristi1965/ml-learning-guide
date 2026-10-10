@@ -1,0 +1,122 @@
+{
+  "lessons": 16,
+  "checks": [
+    {
+      "id": 16,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 17,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 18,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 19,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 20,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 21,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 22,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 23,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 24,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 25,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 26,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 27,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 28,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    },
+    {
+      "id": 29,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 30,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 3
+    },
+    {
+      "id": 31,
+      "solution": "pass",
+      "starter": "fails assertion as intended",
+      "source_excerpt": "exact",
+      "assertions": 4
+    }
+  ],
+  "limitations": [
+    "SVM source is a 6-line problem-only stub, explicitly labeled; companion hinge lab is new.",
+    "Browser labs are bounded stdlib exercises, not full NumPy/sklearn models.",
+    "Validation executed locally with Python; browser runner integration is parent task."
+  ]
+}

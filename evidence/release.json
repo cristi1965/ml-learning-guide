@@ -1,0 +1,28 @@
+{
+  "version": "project-v2",
+  "lessons": 48,
+  "pythonFilesMapped": 158,
+  "checks": [
+    "48 source excerpts verified",
+    "48 starters fail and solutions pass native Python",
+    "48 solutions pass browser Pyodide",
+    "48 lessons read/quiz/editor at 375 and1280",
+    "Python timeout/output cap/stop/reference separation",
+    "320 mobile filter/search/persistence"
+  ],
+  "limitations": [
+    "No upstream full model training completed",
+    "No physical-device testing",
+    "No human learner research"
+  ],
+  "sha256": {
+    "index.html": "b3facdc81e74ef06f505f5a53337af485090a396570cb0ceead47dcf1580d540",
+    "app.js": "f5cbf079e3f55f34a569946d7769d0e51d116b59ee872cd13ebfc97944f121c6",
+    "content.js": "368413f2879a65c31e72e763658b38e209b2a8419fd01177ee9c7b1e6a191792",
+    "runner.js": "bf76d215546d627caedfed29d5407b19d119c5f308e0f133f00a7a25c69824f5",
+    "lab-ui.js": "4ffcce7376517405222d2a9beec014e11095e3d5b596dcdde40d41cc76513300",
+    "vendor/editor.js": "e959e71591cac1c10ce7daa8990c2cf21a4facbd320a1c39ccfc6f77cd293a7a",
+    "course.html": "69951533c1f31744a0ca9f6a7edc6208fe66f15b3d233e43c7781835d108a4c6",
+    "python-exercises.zip": "1d780e6dd2e5fdc24ce93f2ad6356c35d762b922c7ddfd1e2f5d294ff80c4f35"
+  }
+}

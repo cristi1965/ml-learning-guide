@@ -1,0 +1,2346 @@
+[
+  {
+    "title": "电脑怎么学会算苹果价格？",
+    "group": "起步",
+    "goal": "先看懂这件事：最后给它们起名字。",
+    "example": "你知道2斤苹果卖6元。电脑不知道单价，先猜每斤2元。",
+    "mechanism": "输入是重量，参数是单价，输出是预测总价。训练改变参数，预测时使用参数。这里只用一个样本演示；实际应留出未参与训练的数据检查效果。",
+    "question": "猜每斤4元时，2斤预测8元。下一步该怎样？",
+    "options": [
+      "降低单价",
+      "增加重量来配合预测",
+      "把真实价格改成8元"
+    ],
+    "answer": 0,
+    "feedback": "真实答案不动，调整模型中的单价，让预测从8元靠近6元。",
+    "source": "algorithms/machinelearning/linear_regression.py",
+    "demo": "apple",
+    "id": 0,
+    "code": {
+      "start": 48,
+      "end": 68,
+      "lines": [
+        {
+          "text": "def linear_regression_gradient_descent(",
+          "line": 48
+        },
+        {
+          "text": "    X: np.ndarray, y: np.ndarray, alpha: float, iterations: int",
+          "line": 49
+        },
+        {
+          "text": ") -> np.ndarray:",
+          "line": 50
+        },
+        {
+          "text": "    \"\"\"",
+          "line": 51
+        },
+        {
+          "text": "    # adjusts model parameters to find the best-fit line for given data.",
+          "line": 52
+        },
+        {
+          "text": "    # y = X * theta, instead of mx + C",
+          "line": 53
+        },
+        {
+          "text": "    # calculate cost function (MSE) = 1/n (sum(yi - ypred)^2) = 1/n (sum(yi - (mx_i + c)^2))",
+          "line": 54
+        },
+        {
+          "text": "    # find gradient of cost function (partial derivative with resp to m and c)",
+          "line": 55
+        },
+        {
+          "text": "    # D_m = (-2/n) * sum(X * (Y - y_pred))",
+          "line": 56
+        },
+        {
+          "text": "    # D_c = (-2/n) * sum(Y - y_pred)",
+          "line": 57
+        },
+        {
+          "text": "    # in vector form",
+          "line": 58
+        },
+        {
+          "text": "    # update parameters: m = m - alpha (partial deriv wrt m), c = c - alpha (partial deriv wrt c)",
+          "line": 59
+        },
+        {
+          "text": "    \"\"\"",
+          "line": 60
+        },
+        {
+          "text": "    # 读取样本数m和特征数n。",
+          "line": null
+        },
+        {
+          "text": "    m, n = X.shape",
+          "line": 61
+        },
+        {
+          "text": "    # 每个特征先分配一个初始权重0。",
+          "line": null
+        },
+        {
+          "text": "    theta = np.zeros(n)  # slope",
+          "line": 62
+        },
+        {
+          "text": "    # 重复进行预测、计算梯度、更新参数。",
+          "line": null
+        },
+        {
+          "text": "    for _ in range(iterations):",
+          "line": 63
+        },
+        {
+          "text": "        # 矩阵乘法批量预测，得到每条样本的预测值。",
+          "line": null
+        },
+        {
+          "text": "        y_pred = X @ theta",
+          "line": 64
+        },
+        {
+          "text": "        # 用预测减真实；正值代表预测偏高。",
+          "line": null
+        },
+        {
+          "text": "        error = y_pred - y",
+          "line": 65
+        },
+        {
+          "text": "        # 按样本取平均，把各误差贡献汇总到参数梯度。",
+          "line": null
+        },
+        {
+          "text": "        gradients = 1 / m * (X.T @ error)",
+          "line": 66
+        },
+        {
+          "text": "        # 沿梯度反方向迈一步，alpha控制步长。",
+          "line": null
+        },
+        {
+          "text": "        theta -= alpha * gradients",
+          "line": 67
+        },
+        {
+          "text": "    # 保留4位小数并转为Python列表。",
+          "line": null
+        },
+        {
+          "text": "    return np.round(theta, 4).tolist()",
+          "line": 68
+        }
+      ],
+      "notes": [
+        "X每行是一条样本，每列是一项特征；y保存实际答案。",
+        "theta是待学习的参数向量。全零只是初始化，不是训练结果。",
+        "返回前round只为格式化，会损失精度；函数标注ndarray但实际返回list。"
+      ],
+      "symbol": "linear_regression_gradient_descent"
+    },
+    "walk": [
+      {
+        "title": "先让电脑猜一次",
+        "body": "2斤 × 2元/斤 = 4元。这个4元是电脑的预测，不是真实售价。"
+      },
+      {
+        "title": "拿真实答案检查",
+        "body": "实际是6元，预测只有4元，少了2元。重量不改、实际售价不改，调整猜测的单价。"
+      },
+      {
+        "title": "修改猜测后再算",
+        "body": "猜每斤2.8元，2斤就是5.6元。比4元更接近6元，说明这次调整有用。"
+      },
+      {
+        "title": "最后给它们起名字",
+        "body": "重量叫输入，猜测的单价叫参数，算出的价格叫预测。反复检查并调整参数，这个过程叫训练。"
+      }
+    ],
+    "lab": {
+      "goal": "预测一笔苹果订单",
+      "starter": "def price(weight, unit_price):\n    # TODO: 预测一笔苹果订单\n    return None\n",
+      "solution": "def price(weight, unit_price):\n    return weight * unit_price\n",
+      "tests": "assert price(2,3)==6\nassert price(0,3)==0\nassert price(1.5,4)==6",
+      "hint": "斤数乘单价。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "知道猜低了，该提高多少？",
+    "group": "起步",
+    "goal": "先看懂这件事：别一口气走太远。",
+    "example": "单价2元时总价4元，单价2.1元时总价4.2元。两次都没到实际6元，但第二次更接近。",
+    "mechanism": "梯度 dL/dw=4(2w−6)。w=2时梯度−8；学习率0.1让新w=2−0.1×(−8)=2.8。每一步都重算梯度。源码使用平均平方误差的一半，对应梯度少一个2；演示使用完整平方误差。",
+    "question": "如果学习率过大，会怎样？",
+    "options": [
+      "保证更快收敛",
+      "可能越过最低点并发散",
+      "只改变真实答案"
+    ],
+    "answer": 1,
+    "feedback": "方向正确也可能迈得太远；本例学习率0.3会让误差振荡放大。",
+    "source": "algorithms/machinelearning/linear_regression.py",
+    "demo": "apple",
+    "id": 1,
+    "code": {
+      "start": 48,
+      "end": 68,
+      "lines": [
+        {
+          "text": "def linear_regression_gradient_descent(",
+          "line": 48
+        },
+        {
+          "text": "    X: np.ndarray, y: np.ndarray, alpha: float, iterations: int",
+          "line": 49
+        },
+        {
+          "text": ") -> np.ndarray:",
+          "line": 50
+        },
+        {
+          "text": "    \"\"\"",
+          "line": 51
+        },
+        {
+          "text": "    # adjusts model parameters to find the best-fit line for given data.",
+          "line": 52
+        },
+        {
+          "text": "    # y = X * theta, instead of mx + C",
+          "line": 53
+        },
+        {
+          "text": "    # calculate cost function (MSE) = 1/n (sum(yi - ypred)^2) = 1/n (sum(yi - (mx_i + c)^2))",
+          "line": 54
+        },
+        {
+          "text": "    # find gradient of cost function (partial derivative with resp to m and c)",
+          "line": 55
+        },
+        {
+          "text": "    # D_m = (-2/n) * sum(X * (Y - y_pred))",
+          "line": 56
+        },
+        {
+          "text": "    # D_c = (-2/n) * sum(Y - y_pred)",
+          "line": 57
+        },
+        {
+          "text": "    # in vector form",
+          "line": 58
+        },
+        {
+          "text": "    # update parameters: m = m - alpha (partial deriv wrt m), c = c - alpha (partial deriv wrt c)",
+          "line": 59
+        },
+        {
+          "text": "    \"\"\"",
+          "line": 60
+        },
+        {
+          "text": "    # 读取样本数m和特征数n。",
+          "line": null
+        },
+        {
+          "text": "    m, n = X.shape",
+          "line": 61
+        },
+        {
+          "text": "    # 每个特征先分配一个初始权重0。",
+          "line": null
+        },
+        {
+          "text": "    theta = np.zeros(n)  # slope",
+          "line": 62
+        },
+        {
+          "text": "    # 重复进行预测、计算梯度、更新参数。",
+          "line": null
+        },
+        {
+          "text": "    for _ in range(iterations):",
+          "line": 63
+        },
+        {
+          "text": "        # 矩阵乘法批量预测，得到每条样本的预测值。",
+          "line": null
+        },
+        {
+          "text": "        y_pred = X @ theta",
+          "line": 64
+        },
+        {
+          "text": "        # 用预测减真实；正值代表预测偏高。",
+          "line": null
+        },
+        {
+          "text": "        error = y_pred - y",
+          "line": 65
+        },
+        {
+          "text": "        # 按样本取平均，把各误差贡献汇总到参数梯度。",
+          "line": null
+        },
+        {
+          "text": "        gradients = 1 / m * (X.T @ error)",
+          "line": 66
+        },
+        {
+          "text": "        # 沿梯度反方向迈一步，alpha控制步长。",
+          "line": null
+        },
+        {
+          "text": "        theta -= alpha * gradients",
+          "line": 67
+        },
+        {
+          "text": "    # 保留4位小数并转为Python列表。",
+          "line": null
+        },
+        {
+          "text": "    return np.round(theta, 4).tolist()",
+          "line": 68
+        }
+      ],
+      "notes": [
+        "alpha就是学习率，iterations是更新次数。",
+        "本函数梯度对应L=平均(error²)/2；苹果动画用L=error²，不能直接套同一个系数。",
+        "X.T将样本误差分配回每个特征；不是对区间做二分。"
+      ],
+      "symbol": "linear_regression_gradient_descent"
+    },
+    "walk": [
+      {
+        "title": "先给错误打分",
+        "body": "用“差价的平方”记分。猜4元，差−2元，记4分；猜5.6元，差−0.4元，记0.16分。越低越好。这个分数叫损失。"
+      },
+      {
+        "title": "看附近的变化方向",
+        "body": "在单价2元附近，略微提高单价，损失会变小。描述这种局部变化的数叫梯度；这个例子算出是−8。负号表示提高单价可让损失下降。"
+      },
+      {
+        "title": "控制一次改多少",
+        "body": "学习率是步子大小的控制量。取0.1时，新单价=2−0.1×(−8)=2.8。这里的−8由求导算出，暂时先理解它的作用，后面再学怎么算。"
+      },
+      {
+        "title": "别一口气走太远",
+        "body": "单价超过3元后，再提高反而会变差。所以每一步都要重新计算梯度；学习率太大可能来回跳甚至越错越多。"
+      }
+    ],
+    "lab": {
+      "goal": "完成一次梯度更新",
+      "starter": "def update(w, rate):\n    # TODO: 完成一次梯度更新\n    return None\n",
+      "solution": "def update(w, rate):\n    return w - rate * 4 * (2*w-6)\n",
+      "tests": "assert abs(update(2,.1)-2.8)<1e-9\nassert abs(update(4,.1)-3.2)<1e-9",
+      "hint": "新单价等于旧单价减去学习率乘梯度。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "它和二分查找哪里不同？",
+    "group": "起步",
+    "goal": "先看懂这件事：复杂模型不只猜一个数。",
+    "example": "还是猜单价：知道它在0～10元之间，可以先试5元。",
+    "mechanism": "二分需要可排除半边的条件，例如有序或单调关系。神经网络有多个参数和复杂损失曲面；梯度下降不保证找到全局最优。苹果单价甚至可直接用6÷2求出，教学例子并不需要复杂算法。",
+    "question": "二分查找的关键动作是？",
+    "options": [
+      "按梯度更新所有参数",
+      "根据判断排除一半候选区间",
+      "随机更改答案"
+    ],
+    "answer": 1,
+    "feedback": "区间折半才是二分的核心；“逐步靠近答案”并不是它独有的特征。",
+    "source": "algorithms/deeplearning/gradient_descent.py",
+    "demo": "",
+    "id": 2,
+    "code": {
+      "start": 6,
+      "end": 30,
+      "lines": [
+        {
+          "text": "def gradient_descent(X, y, weights, learning_rate, n_iterations, batch_size=1, method='batch'):",
+          "line": 6
+        },
+        {
+          "text": "    # 外层控制完整迭代轮数。",
+          "line": null
+        },
+        {
+          "text": "    for i in range(n_iterations):",
+          "line": 7
+        },
+        {
+          "text": "        # 使用所有样本计算这次更新。",
+          "line": null
+        },
+        {
+          "text": "        if method == 'batch':",
+          "line": 8
+        },
+        {
+          "text": "            # 批量计算预测误差。",
+          "line": null
+        },
+        {
+          "text": "            errors = X @ weights - y",
+          "line": 9
+        },
+        {
+          "text": "            # derivative of error = 2 * error * derivative of error with respect to weights = 2 * error * X = 1/2n * 2 * error * X = errors * X / n",
+          "line": 10
+        },
+        {
+          "text": "            # 完整均方误差的梯度含系数2。",
+          "line": null
+        },
+        {
+          "text": "            gradients = 2 * X.T @ errors / len(y) ",
+          "line": 11
+        },
+        {
+          "text": "            # 用学习率乘梯度，再从旧参数中减去。",
+          "line": null
+        },
+        {
+          "text": "            weights = weights - learning_rate * gradients ",
+          "line": 12
+        },
+        {
+          "text": "        # 一次只用一条样本更新，噪声通常更大。",
+          "line": null
+        },
+        {
+          "text": "        elif method == 'stochastic':",
+          "line": 13
+        },
+        {
+          "text": "            for i in range(len(y)):",
+          "line": 14
+        },
+        {
+          "text": "                # 保留二维形状取出一条样本。",
+          "line": null
+        },
+        {
+          "text": "                xi= X[i:i+1]",
+          "line": 15
+        },
+        {
+          "text": "                # 取出同位置的目标值。",
+          "line": null
+        },
+        {
+          "text": "                yi= y[i:i+1]",
+          "line": 16
+        },
+        {
+          "text": "                error = xi @ weights - yi",
+          "line": 17
+        },
+        {
+          "text": "                gradients = 2 * xi.T @ error",
+          "line": 18
+        },
+        {
+          "text": "                # 用学习率乘梯度，再从旧参数中减去。",
+          "line": null
+        },
+        {
+          "text": "                weights = weights - learning_rate * gradients",
+          "line": 19
+        },
+        {
+          "text": "        # 每次使用一批样本，在效率与梯度噪声之间折中。",
+          "line": null
+        },
+        {
+          "text": "        elif method == 'mini_batch':",
+          "line": 20
+        },
+        {
+          "text": "            # Shuffle data",
+          "line": 21
+        },
+        {
+          "text": "            for i in range(0, len(y), batch_size):",
+          "line": 22
+        },
+        {
+          "text": "                # 切出本批输入，不改变原数据顺序。",
+          "line": null
+        },
+        {
+          "text": "                xi = X[i:i+batch_size]",
+          "line": 23
+        },
+        {
+          "text": "                # 切出同一批真实标签。",
+          "line": null
+        },
+        {
+          "text": "                yi = y[i:i+batch_size]",
+          "line": 24
+        },
+        {
+          "text": "                errors = xi @ weights - yi",
+          "line": 25
+        },
+        {
+          "text": "                gradients = 2 * xi.T @ errors / len(yi)",
+          "line": 26
+        },
+        {
+          "text": "                # 用学习率乘梯度，再从旧参数中减去。",
+          "line": null
+        },
+        {
+          "text": "                weights = weights - learning_rate * gradients",
+          "line": 27
+        },
+        {
+          "text": "        else:",
+          "line": 28
+        },
+        {
+          "text": "            raise ValueError(\"Method must be 'batch', 'stochastic', or 'mini_batch'\")",
+          "line": 29
+        },
+        {
+          "text": "    return weights",
+          "line": 30
+        }
+      ],
+      "notes": [
+        "method决定一次更新使用全部、一条还是一小批数据。",
+        "这里gradients有系数2，对应完整均方误差。",
+        "原注释写Shuffle data，但实现只按顺序切片，没有随机打乱。"
+      ],
+      "symbol": "gradient_descent"
+    },
+    "walk": [
+      {
+        "title": "二分先找中点",
+        "body": "5元太高，把5～10排除，只留0～5；下一次试中点2.5。关键是有依据排除一半范围。"
+      },
+      {
+        "title": "梯度看当前位置",
+        "body": "它不需要维护上下界，而是看现在往上或往下改一点，错误会怎样变化。"
+      },
+      {
+        "title": "苹果题可以直接除",
+        "body": "6元÷2斤=3元/斤，这题本身根本不需要训练。我们借它观察训练动作。"
+      },
+      {
+        "title": "复杂模型不只猜一个数",
+        "body": "神经网络可能同时调整很多数。梯度分别告诉这些数的调整方向，不能简单把全部候选方案从中间切开。"
+      }
+    ],
+    "lab": {
+      "goal": "计算二分查找下一次猜测",
+      "starter": "def midpoint(low, high):\n    # TODO: 计算二分查找下一次猜测\n    return None\n",
+      "solution": "def midpoint(low, high):\n    return (low+high)/2\n",
+      "tests": "assert midpoint(0,10)==5\nassert midpoint(0,5)==2.5",
+      "hint": "中点是上下界的平均值；这不是梯度更新。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "多种商品怎么一起算？",
+    "group": "基础",
+    "goal": "先看懂这件事：再放入更多订单。",
+    "example": "苹果3元/斤，梨4元/斤。一笔订单买2斤苹果和1斤梨。",
+    "mechanism": "向量是一列或一行数。矩阵可把多笔订单叠起来。矩阵乘法中，左边一行与右边一列逐项相乘再求和；内侧维度必须相等。",
+    "question": "[2,1]与单价[3,4]的总价是？",
+    "options": [
+      "9",
+      "14",
+      "10"
+    ],
+    "answer": 2,
+    "feedback": "对应位置相乘再相加：2×3+1×4=10。",
+    "source": "algorithms/math/matrixmul.py",
+    "demo": "matrix",
+    "id": 3,
+    "code": {
+      "start": 4,
+      "end": 17,
+      "lines": [
+        {
+          "text": "def matrixmul(",
+          "line": 4
+        },
+        {
+          "text": "    a: list[list[int | float]], b: list[list[int | float]]",
+          "line": 5
+        },
+        {
+          "text": ") -> list[list[int | float]]:",
+          "line": 6
+        },
+        {
+          "text": "    # 读取左矩阵的行数和列数。",
+          "line": null
+        },
+        {
+          "text": "    m, n1 = len(a), len(a[0])",
+          "line": 7
+        },
+        {
+          "text": "    # 读取右矩阵的行数和列数。",
+          "line": null
+        },
+        {
+          "text": "    n2, p = len(b), len(b[0])",
+          "line": 8
+        },
+        {
+          "text": "    # 内侧维度不相等时无法相乘。",
+          "line": null
+        },
+        {
+          "text": "    if n1 != n2:",
+          "line": 9
+        },
+        {
+          "text": "        return -1",
+          "line": 10
+        },
+        {
+          "text": "    # else do matrix mul",
+          "line": 11
+        },
+        {
+          "text": "    # 先创建m行p列的全零输出。",
+          "line": null
+        },
+        {
+          "text": "    c = [[0 for _ in range(p)] for _ in range(m)]",
+          "line": 12
+        },
+        {
+          "text": "    # 选择左矩阵第i行。",
+          "line": null
+        },
+        {
+          "text": "    for i in range(m):",
+          "line": 13
+        },
+        {
+          "text": "        # 选择右矩阵第j列。",
+          "line": null
+        },
+        {
+          "text": "        for j in range(p):",
+          "line": 14
+        },
+        {
+          "text": "            # 沿共同维度逐个配对。",
+          "line": null
+        },
+        {
+          "text": "            for k in range(n1):",
+          "line": 15
+        },
+        {
+          "text": "                # 对应元素相乘并累加到这个输出格。",
+          "line": null
+        },
+        {
+          "text": "                c[i][j] += a[i][k] * b[k][j]",
+          "line": 16
+        },
+        {
+          "text": "    return c",
+          "line": 17
+        }
+      ],
+      "notes": [
+        "a形状为m×n1，b形状为n2×p；n1必须等于n2。",
+        "外两层循环选择输出位置，内层k做这一行和这一列的点积。",
+        "此实现假设输入非空且各行长度一致，不兼容时返回−1。"
+      ],
+      "symbol": "matrixmul"
+    },
+    "walk": [
+      {
+        "title": "分别算两样商品",
+        "body": "苹果2×3=6元，梨1×4=4元。"
+      },
+      {
+        "title": "合成一个总价",
+        "body": "6+4=10元。写成一行就是2×3+1×4。"
+      },
+      {
+        "title": "用列表代替长句",
+        "body": "把数量写成[2,1]，单价写成[3,4]。按对应位置相乘，再相加，仍然是10。这种数字列表叫向量。"
+      },
+      {
+        "title": "再放入更多订单",
+        "body": "每笔订单占一行，多行叠起来就是矩阵。下面演示一整行和一整列配对；绿色格子是本次参与计算的数。"
+      }
+    ],
+    "lab": {
+      "goal": "把两种商品的费用相加",
+      "starter": "def dot(a, b):\n    # TODO: 把两种商品的费用相加\n    return None\n",
+      "solution": "def dot(a, b):\n    return sum(x*y for x,y in zip(a,b))\n",
+      "tests": "assert dot([2,1],[3,4])==10\nassert dot([0,0],[3,4])==0\nassert dot([1,-1],[2,3])==-1",
+      "hint": "对应元素相乘再求和。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "固定配送费放在哪里？",
+    "group": "基础",
+    "goal": "先看懂这件事：线性回归学什么。",
+    "example": "苹果3元/斤，无论买多少，都另收2元配送费。",
+    "mechanism": "w控制每增加一斤涨多少钱，b控制固定起点。源码用一列全1表示偏置。正规方程需要可逆条件；梯度法用重复更新求解。",
+    "question": "固定配送费对应哪个量？",
+    "options": [
+      "输入x",
+      "偏置b",
+      "损失L"
+    ],
+    "answer": 1,
+    "feedback": "偏置是不随斤数变化的固定项，不是斜率。",
+    "source": "algorithms/machinelearning/linear_regression.py",
+    "demo": "",
+    "id": 4,
+    "code": {
+      "start": 29,
+      "end": 34,
+      "lines": [
+        {
+          "text": "def linear_regression_normal_equation(",
+          "line": 29
+        },
+        {
+          "text": "    X: list[list[float]], y: list[float]",
+          "line": 30
+        },
+        {
+          "text": ") -> list[float]:",
+          "line": 31
+        },
+        {
+          "text": "    # 转置使行列互换，为正规方程准备Xᵀ。",
+          "line": null
+        },
+        {
+          "text": "    x_tranpose = np.transpose(X)",
+          "line": 32
+        },
+        {
+          "text": "    # 计算(XᵀX)⁻¹Xᵀy；求逆要求矩阵可逆。",
+          "line": null
+        },
+        {
+          "text": "    theta = np.linalg.inv(x_tranpose @ X) @ x_tranpose @ y",
+          "line": 33
+        },
+        {
+          "text": "    # 保留4位小数并转为Python列表。",
+          "line": null
+        },
+        {
+          "text": "    return np.round(theta, 4).tolist()",
+          "line": 34
+        }
+      ],
+      "notes": [
+        "这是正规方程，一次计算参数，不使用梯度下降。",
+        "若需要偏置，要给X添加全1列。",
+        "XᵀX可能不可逆；本实现没有用伪逆或正则化兜底。"
+      ],
+      "symbol": "linear_regression_normal_equation"
+    },
+    "walk": [
+      {
+        "title": "先算商品费",
+        "body": "买2斤，商品费2×3=6元。"
+      },
+      {
+        "title": "再加固定费用",
+        "body": "总价6+2=8元。多买1斤只增加3元，配送费不再增加。"
+      },
+      {
+        "title": "换成简短的符号",
+        "body": "x表示斤数，w表示单价，b表示配送费，所以总价=wx+b。每个字母都只是刚才那个数的简写。"
+      },
+      {
+        "title": "线性回归学什么",
+        "body": "给它多笔重量和价格，让它寻找合适的w和b。这种用直线关系预测数值的模型叫线性回归。"
+      }
+    ],
+    "lab": {
+      "goal": "加入固定配送费",
+      "starter": "def predict(x, w, b):\n    # TODO: 加入固定配送费\n    return None\n",
+      "solution": "def predict(x, w, b):\n    return x*w+b\n",
+      "tests": "assert predict(2,3,2)==8\nassert predict(0,3,2)==2",
+      "hint": "偏置b不随重量增加。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "猜金额和分邮件不是一回事",
+    "group": "传统ML",
+    "goal": "先看懂这件事：再检查漏掉多少。",
+    "example": "一项任务是猜苹果多少钱，另一项任务是判断邮件是不是垃圾邮件。",
+    "mechanism": "准确率是预测正确的比例。100封邮件只有1封垃圾邮件，全部猜正常也有99%准确率，却一封垃圾邮件也抓不到；需结合precision与recall。",
+    "question": "全部猜正常得到99%准确率，说明什么？",
+    "options": [
+      "已经能识别垃圾邮件",
+      "必须结合类别分布与召回率评价",
+      "准确率一定算错"
+    ],
+    "answer": 1,
+    "feedback": "类别不平衡会掩盖漏检；召回率关注实际正例中找回多少。",
+    "source": "algorithms/machinelearning/logistic_regression.py",
+    "demo": "",
+    "id": 5,
+    "code": {
+      "start": 21,
+      "end": 25,
+      "lines": [
+        {
+          "text": "def predict(X, weights, bias):",
+          "line": 21
+        },
+        {
+          "text": "    # 先做线性加权求和，加上偏置。",
+          "line": null
+        },
+        {
+          "text": "    forward_pass = np.dot(X, weights) + bias",
+          "line": 22
+        },
+        {
+          "text": "    # 应用sigmoid，把分数映射到0～1。",
+          "line": null
+        },
+        {
+          "text": "    sigmoid = 1 / (1 + np.exp(-forward_pass))",
+          "line": 23
+        },
+        {
+          "text": "    # 选择分类阈值为0.5。",
+          "line": null
+        },
+        {
+          "text": "    threshold = .5",
+          "line": 24
+        },
+        {
+          "text": "    # 比较阈值，再把布尔值转换为0或1。",
+          "line": null
+        },
+        {
+          "text": "    return np.round(sigmoid >= threshold).astype(int)",
+          "line": 25
+        }
+      ],
+      "notes": [
+        "X @ weights + bias先给每个样本打分。",
+        "sigmoid将分数压到0～1，0.5是本例决策阈值。",
+        "函数只返回0/1类别，不是训练函数，也不是返回概率的接口。"
+      ],
+      "symbol": "predict"
+    },
+    "walk": [
+      {
+        "title": "先看答案的类型",
+        "body": "价格可以是5.2或6.8，是一个数值；邮件的答案是垃圾或正常，是一个类别。"
+      },
+      {
+        "title": "分类也能先打分",
+        "body": "模型先输出垃圾邮件的可能性，例如0.8，再用阈值决定类别。逻辑回归就是一种这样的分类模型。"
+      },
+      {
+        "title": "只看正确率会被骗",
+        "body": "100封里只有1封垃圾邮件，全部猜正常也对99封，但真正想抓的那1封全漏掉。"
+      },
+      {
+        "title": "再检查漏掉多少",
+        "body": "召回率关注实际垃圾邮件里抓住多少；精确率关注被判为垃圾的邮件里多少真的是垃圾。两者检查的问题不同。"
+      }
+    ],
+    "lab": {
+      "goal": "计算召回率",
+      "starter": "def recall(tp, fn):\n    # TODO: 计算召回率\n    return None\n",
+      "solution": "def recall(tp, fn):\n    return tp/(tp+fn) if tp+fn else 0.0\n",
+      "tests": "assert recall(3,1)==.75\nassert recall(0,4)==0\nassert recall(0,0)==0",
+      "hint": "分母是真正的正例总数；本练习无正例时约定为0。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "找邻居、分组、压缩有什么区别？",
+    "group": "传统ML",
+    "goal": "先看懂这件事：先分清自己要什么。",
+    "example": "你有一批顾客资料：购买次数、花费金额，还有些顾客已经被标注为常客。",
+    "mechanism": "KNN是监督分类，K-Means不需要类别标签。PCA通常需中心化，特征尺度差异大时考虑标准化。高方差不保证对分类最有用。",
+    "question": "没有标签，想把顾客按相似性分组，优先理解？",
+    "options": [
+      "K-Means",
+      "KNN标签投票",
+      "训练集准确率"
+    ],
+    "answer": 0,
+    "feedback": "聚类寻找数据内部分组，不要求先给出正确类别。",
+    "source": "algorithms/machinelearning/k_means.py",
+    "demo": "",
+    "id": 6,
+    "code": {
+      "start": 52,
+      "end": 82,
+      "lines": [
+        {
+          "text": "def k_means_clustering( points: list[tuple[float, float]], k: int, initial_centroids: list[tuple[float, float]], max_iterations: int,) -> list[tuple[float, float]]:",
+          "line": 52
+        },
+        {
+          "text": "    # 将样本转为浮点数组，避免整型计算截断。",
+          "line": null
+        },
+        {
+          "text": "    points = np.array(points, dtype=float)",
+          "line": 53
+        },
+        {
+          "text": "    # 读取给定的初始中心。",
+          "line": null
+        },
+        {
+          "text": "    centroids = np.array(initial_centroids, dtype=float)",
+          "line": 54
+        },
+        {
+          "text": "",
+          "line": 55
+        },
+        {
+          "text": "    for _ in range(max_iterations):",
+          "line": 56
+        },
+        {
+          "text": "        # 为k个簇建立空的成员列表。",
+          "line": null
+        },
+        {
+          "text": "        clusters = [[] for _ in range(k)]",
+          "line": 57
+        },
+        {
+          "text": "        # for each point -> calculate distance of that point to the centroid",
+          "line": 58
+        },
+        {
+          "text": "        for pt in points:",
+          "line": 59
+        },
+        {
+          "text": "            # 计算当前点到每个中心的距离。",
+          "line": null
+        },
+        {
+          "text": "            dists = [euclid_distance(pt, c) for c in centroids]",
+          "line": 60
+        },
+        {
+          "text": "            # 找到距离最小的中心下标。",
+          "line": null
+        },
+        {
+          "text": "            best_idx = np.argmin(dists)",
+          "line": 61
+        },
+        {
+          "text": "            # 把该点加入最近的簇。",
+          "line": null
+        },
+        {
+          "text": "            clusters[best_idx].append(pt)",
+          "line": 62
+        },
+        {
+          "text": "",
+          "line": 63
+        },
+        {
+          "text": "        # update",
+          "line": 64
+        },
+        {
+          "text": "        new_centroids = []",
+          "line": 65
+        },
+        {
+          "text": "        for i in range(k):",
+          "line": 66
+        },
+        {
+          "text": "            # 取出一个簇的成员。",
+          "line": null
+        },
+        {
+          "text": "            members = clusters[i]",
+          "line": 67
+        },
+        {
+          "text": "            if members:",
+          "line": 68
+        },
+        {
+          "text": "                member_arr = np.array(members)",
+          "line": 69
+        },
+        {
+          "text": "                # 对每一维特征分别求平均作为新中心。",
+          "line": null
+        },
+        {
+          "text": "                mean = np.mean(member_arr, axis=0)",
+          "line": 70
+        },
+        {
+          "text": "                new_centroids.append(np.round(mean, 4))",
+          "line": 71
+        },
+        {
+          "text": "            else:  # if mean = 0",
+          "line": 72
+        },
+        {
+          "text": "                new_centroids.append(centroids[i])",
+          "line": 73
+        },
+        {
+          "text": "",
+          "line": 74
+        },
+        {
+          "text": "        # check for convergence",
+          "line": 75
+        },
+        {
+          "text": "        # 判断新旧中心是否足够接近，可提前停止。",
+          "line": null
+        },
+        {
+          "text": "        if np.allclose(centroids, new_centroids, atol=1e-6):",
+          "line": 76
+        },
+        {
+          "text": "            break",
+          "line": 77
+        },
+        {
+          "text": "        # 将新中心用于下一轮分配。",
+          "line": null
+        },
+        {
+          "text": "        centroids = new_centroids",
+          "line": 78
+        },
+        {
+          "text": "",
+          "line": 79
+        },
+        {
+          "text": "    # return centroids",
+          "line": 80
+        },
+        {
+          "text": "    final = [tuple(float(x) for x in c) for c in centroids]",
+          "line": 81
+        },
+        {
+          "text": "    return final",
+          "line": 82
+        }
+      ],
+      "notes": [
+        "每轮先按最近中心分组，再用组内均值重算中心。",
+        "空簇保留旧中心；原else注释说mean=0不准确。",
+        "返回的是簇中心，不是每个样本的类别标签。"
+      ],
+      "symbol": "k_means_clustering"
+    },
+    "walk": [
+      {
+        "title": "有标签：找邻居投票",
+        "body": "想判断新顾客是不是常客，可找资料最相近的几位，看他们多数是什么类别。这是KNN的思路。"
+      },
+      {
+        "title": "没有标签：自己分组",
+        "body": "如果没有常客标签，只想把相似顾客放一起，可以先设几个中心，反复分配顾客并移动中心。这是K-Means。"
+      },
+      {
+        "title": "项目太多：压缩表示",
+        "body": "资料有很多数，想用更少的数保留主要变化方向，可了解PCA。它做降维，不是投票分类。"
+      },
+      {
+        "title": "先分清自己要什么",
+        "body": "本课先操作阅读K-Means：点分给最近中心，中心移到组内平均位置，重复。不同算法不能仅凭名字互换。"
+      }
+    ],
+    "lab": {
+      "goal": "重新计算一个簇的中心",
+      "starter": "def center(points):\n    # TODO: 重新计算一个簇的中心\n    return None\n",
+      "solution": "def center(points):\n    return sum(points)/len(points)\n",
+      "tests": "assert center([0,2,4])==2\nassert center([10,12])==11",
+      "hint": "这里用一维点，取均值即可；输入保证非空。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "优惠后，价格能变成负数吗？",
+    "group": "神经网络",
+    "goal": "跟着算两笔订单，就能理解ReLU做了什么。",
+    "example": "苹果每斤3元，优惠券减5元。买1斤，先算3−5=−2元。但这家店规定最低支付0元，不会倒贴2元。",
+    "mechanism": "如果只堆线性层，不加非线性，多层仍可合并成一个线性变换。非线性使网络能表示更复杂的关系，但并非自动保证学好。",
+    "question": "买1斤苹果，按3元/斤计算再减5元；最低支付0元。最后付多少？",
+    "options": [
+      "付−2元，店家倒贴",
+      "付0元",
+      "付3元"
+    ],
+    "answer": 1,
+    "feedback": "先算1×3−5=−2。最低支付0元，所以负数变成0；这就是本例的ReLU规则。",
+    "source": "algorithms/deeplearning/autograd.py",
+    "demo": "neuron",
+    "id": 7,
+    "code": {
+      "symbol": "Value.relu",
+      "start": 39,
+      "end": 46,
+      "lines": [
+        {
+          "line": null,
+          "text": "    # 在Value类里定义ReLU：处理当前节点的数值。"
+        },
+        {
+          "line": 39,
+          "text": "    def relu(self):"
+        },
+        {
+          "line": null,
+          "text": "    # 如果输入是负数，结果写0；否则保留原数值。"
+        },
+        {
+          "line": 40,
+          "text": "        out = Value(0.0 if self.data < 0 else self.data, (self,), \"ReLU\")"
+        },
+        {
+          "line": 41,
+          "text": ""
+        },
+        {
+          "line": null,
+          "text": "    # 下面的函数负责反向传播；先学前向时可跳过这一段。"
+        },
+        {
+          "line": 42,
+          "text": "        def _backward():"
+        },
+        {
+          "line": null,
+          "text": "    # 正数区域变化率为1；负数区域为0；本实现0点取0。"
+        },
+        {
+          "line": 43,
+          "text": "            self.grad += (out.data > 0) * out.grad"
+        },
+        {
+          "line": 44,
+          "text": ""
+        },
+        {
+          "line": null,
+          "text": "    # 保存这一步的反向规则，调用backward时再执行。"
+        },
+        {
+          "line": 45,
+          "text": "        out._backward = _backward"
+        },
+        {
+          "line": null,
+          "text": "    # 把经过归零规则的新节点返回。"
+        },
+        {
+          "line": 46,
+          "text": "        return out"
+        }
+      ],
+      "notes": [
+        "先只读out = Value(...)这一行：它就是“负数归零，否则保留”。",
+        "self.data是当前输入值，例如−2；out是处理后的新节点，例如0。",
+        "_backward部分留到第9课再看。这里完整保留方法，避免误以为片段可独立运行。"
+      ]
+    },
+    "walk": [
+      {
+        "title": "第一步：先照常算",
+        "body": "买1斤：1×3−5=−2。买2斤：2×3−5=1。到这里都只是乘法和减法。"
+      },
+      {
+        "title": "第二步：再加一条规则",
+        "body": "结果如果小于0，就按0收；如果大于或等于0，就保留原价。所以−2变0，1仍然是1。"
+      },
+      {
+        "title": "这个规则叫ReLU",
+        "body": "名字不用背。它只做一件事：负数归零，非负数照原样通过。下面拖动斤数，观察减去优惠后的计算结果与最终支付。"
+      },
+      {
+        "title": "为什么要多这一步",
+        "body": "如果只做乘法和加减，多做几层仍可合并成一次。加入归零规则后，0元以下是平的、以上继续增长，关系出现转折。数学上称为非线性。神经元常做“加权求和，再套这样的规则”，优惠只是帮助理解的例子。"
+      }
+    ],
+    "lab": {
+      "goal": "写出负数归零规则",
+      "starter": "def relu(x):\n    # TODO: 写出负数归零规则\n    return None\n",
+      "solution": "def relu(x):\n    return max(0,x)\n",
+      "tests": "assert relu(-2)==0\nassert relu(1)==1\nassert relu(0)==0",
+      "hint": "比较x和0，返回较大的一个。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "一个输入变了，结果会变多少？",
+    "group": "神经网络",
+    "goal": "先看懂这件事：反向传播在算这些影响。",
+    "example": "先算(2+3)×4=20。如果只把2增加到3，结果变成24，多了4。",
+    "mechanism": "局部导数相乘沿路径传递，多条路径贡献相加。这里df/da=4，df/db=4，df/dc=5。反向传播计算梯度，优化器才负责更新参数。",
+    "question": "这个例子里df/dc是多少？",
+    "options": [
+      "4",
+      "5",
+      "20"
+    ],
+    "answer": 1,
+    "feedback": "把(a+b)看作固定系数，f对c的变化率就是a+b=5。",
+    "source": "algorithms/deeplearning/autograd.py",
+    "demo": "",
+    "id": 8,
+    "code": {
+      "start": 27,
+      "end": 37,
+      "lines": [
+        {
+          "text": "    def __mul__(self, other):",
+          "line": 27
+        },
+        {
+          "text": "        # 允许普通数字参与运算，先包装成Value节点。",
+          "line": null
+        },
+        {
+          "text": "        other = other if isinstance(other, Value) else Value(other)",
+          "line": 28
+        },
+        {
+          "text": "        # 创建乘法结果节点，同时记录两个上游节点。",
+          "line": null
+        },
+        {
+          "text": "        out = Value(self.data * other.data, (self, other), \"*\")",
+          "line": 29
+        },
+        {
+          "text": "",
+          "line": 30
+        },
+        {
+          "text": "        # 定义这个乘法节点的局部反传规则。",
+          "line": null
+        },
+        {
+          "text": "        def _backward():",
+          "line": 31
+        },
+        {
+          "text": "            # 左输入的贡献=右输入值×输出传来的梯度。",
+          "line": null
+        },
+        {
+          "text": "            self.grad += other.data * out.grad",
+          "line": 32
+        },
+        {
+          "text": "            # 右输入的贡献=左输入值×输出传来的梯度。",
+          "line": null
+        },
+        {
+          "text": "            other.grad += self.data * out.grad",
+          "line": 33
+        },
+        {
+          "text": "",
+          "line": 34
+        },
+        {
+          "text": "        # 把反传规则挂到结果节点，稍后统一执行。",
+          "line": null
+        },
+        {
+          "text": "        out._backward = _backward",
+          "line": 35
+        },
+        {
+          "text": "",
+          "line": 36
+        },
+        {
+          "text": "        return out",
+          "line": 37
+        }
+      ],
+      "notes": [
+        "这是Value类的乘法运算方法，需放回原类上下文理解。",
+        "乘法的局部导数：对左边求导等于右边值，反之亦然。",
+        "+=把多条路径的梯度贡献累加；此处只算梯度，不更新参数。"
+      ],
+      "symbol": "Value.__mul__"
+    },
+    "walk": [
+      {
+        "title": "先看加法这一步",
+        "body": "左边输入多1，加法结果就多1：原来5，变成6。"
+      },
+      {
+        "title": "再看乘法这一步",
+        "body": "多出的1还要乘4，所以最终结果多4。沿这条路径，变化先乘1，再乘4。"
+      },
+      {
+        "title": "再换另一个输入",
+        "body": "如果把最后的4改成5，前面的和仍是5，输出从20变25，多5。不同输入影响输出的程度不同。"
+      },
+      {
+        "title": "反向传播在算这些影响",
+        "body": "用a、b、c表示三个输入，输出叫f。这里f对a、b的变化率都是4，对c是5。程序从结果往回传这些影响，就是反向传播的核心动作。"
+      }
+    ],
+    "lab": {
+      "goal": "手算加法再乘法的梯度",
+      "starter": "def grads(a, b, c):\n    # TODO: 手算加法再乘法的梯度\n    return None\n",
+      "solution": "def grads(a, b, c):\n    return (c,c,a+b)\n",
+      "tests": "assert grads(2,3,4)==(4,4,5)\nassert grads(2,3,6)==(6,6,5)",
+      "hint": "对a、b的梯度是c，对c的梯度是a+b。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "怎么让程序自动算变化率？",
+    "group": "神经网络",
+    "goal": "先看懂这件事：算完不等于改完。",
+    "example": "上一课手算出了4、4、5。现在让代码把每一步计算记下来。",
+    "mechanism": "逆拓扑遍历保证反传顺序。共享节点需要累加贡献。训练下一轮前清空参数梯度，避免无意积累；不清零也可用于有意的梯度累积。",
+    "question": "普通逐批训练为什么清空旧梯度？",
+    "options": [
+      "防止无意叠加上轮梯度",
+      "删除所有模型参数",
+      "让损失永远为0"
+    ],
+    "answer": 0,
+    "feedback": "清梯度不等于清权重；上一轮学到的参数仍被保留。",
+    "source": "tests/test_autograd.py",
+    "demo": "",
+    "id": 9,
+    "code": {
+      "start": 52,
+      "end": 62,
+      "lines": [
+        {
+          "text": "def test_chain_rule():",
+          "line": 52
+        },
+        {
+          "text": "    # f = (a + b) * c",
+          "line": 53
+        },
+        {
+          "text": "    # 创建可记录梯度的输入a。",
+          "line": null
+        },
+        {
+          "text": "    a = Value(2.0)",
+          "line": 54
+        },
+        {
+          "text": "    # 创建第二个输入b。",
+          "line": null
+        },
+        {
+          "text": "    b = Value(3.0)",
+          "line": 55
+        },
+        {
+          "text": "    # 创建乘法因子c。",
+          "line": null
+        },
+        {
+          "text": "    c = Value(4.0)",
+          "line": 56
+        },
+        {
+          "text": "    # 先相加再相乘，自动连接计算图。",
+          "line": null
+        },
+        {
+          "text": "    d = (a + b) * c  # d = 20",
+          "line": 57
+        },
+        {
+          "text": "    # 从结果反向传播，计算各输入的梯度。",
+          "line": null
+        },
+        {
+          "text": "    d.backward()",
+          "line": 58
+        },
+        {
+          "text": "    # 检查前向输出是否符合手算。",
+          "line": null
+        },
+        {
+          "text": "    assert d.data == 20.0",
+          "line": 59
+        },
+        {
+          "text": "    # 检查a的梯度，也就是乘法因子c。",
+          "line": null
+        },
+        {
+          "text": "    assert a.grad == 4.0  # dd/da = c = 4",
+          "line": 60
+        },
+        {
+          "text": "    # 检查b的梯度，它与a走同样的路径。",
+          "line": null
+        },
+        {
+          "text": "    assert b.grad == 4.0  # dd/db = c = 4",
+          "line": 61
+        },
+        {
+          "text": "    # 检查c的梯度，应该等于a+b。",
+          "line": null
+        },
+        {
+          "text": "    assert c.grad == 5.0  # dd/dc = (a+b) = 5",
+          "line": 62
+        }
+      ],
+      "notes": [
+        "测试先建图，再执行backward，最后断言数值与梯度。",
+        "断言不通过会让pytest失败；不是简单打印“成功”。",
+        "把c改成6时，输出应30，a/b梯度应6，c梯度仍5；对应断言也需要更新。"
+      ],
+      "symbol": "test_chain_rule"
+    },
+    "walk": [
+      {
+        "title": "给数值附一张记录卡",
+        "body": "Value除了保存数值，也记录它从哪几个输入算来，以及梯度。梯度可先理解为最终结果对这个数的变化率。"
+      },
+      {
+        "title": "前向时记连接",
+        "body": "a+b得到一个新节点，再乘c又得到一个节点。这些依赖连接起来叫计算图。"
+      },
+      {
+        "title": "从终点倒着算",
+        "body": "调用backward，从最后结果回到乘法再到加法，沿路径乘局部变化率。一个节点被多路使用，要把贡献相加。"
+      },
+      {
+        "title": "算完不等于改完",
+        "body": "backward只得到梯度；优化器再用梯度改参数。下一轮通常清空旧梯度，但保留已学到的参数。"
+      }
+    ],
+    "lab": {
+      "goal": "合并同一节点的多路梯度",
+      "starter": "def accumulate(contributions):\n    # TODO: 合并同一节点的多路梯度\n    return None\n",
+      "solution": "def accumulate(contributions):\n    return sum(contributions)\n",
+      "tests": "assert accumulate([2,3])==5\nassert accumulate([4,-4])==0\nassert accumulate([])==0",
+      "hint": "多条反向路径的贡献相加，不能只保留最后一个。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "电脑怎样在图片里找局部图案？",
+    "group": "模型",
+    "goal": "先看懂这件事：相加要先对齐。",
+    "example": "一张图片可以看成像素表。一个小窗口只看周围几个像素，尝试识别边缘之类的局部模式。",
+    "mechanism": "卷积的参数共享降低参数量；stride影响空间尺寸。残差相加要求形状兼容，改变通道或下采样时可用投影分支。scratch版本仍使用PyTorch层，不是手写卷积反传。",
+    "question": "残差两路形状不同可以直接相加吗？",
+    "options": [
+      "总能",
+      "需要使形状兼容",
+      "删除所有输入"
+    ],
+    "answer": 1,
+    "feedback": "通常用下采样或1×1卷积对齐形状，不能任意相加。",
+    "source": "papers/resnet/resnet34_scratch.py",
+    "demo": "",
+    "id": 10,
+    "code": {
+      "start": 79,
+      "end": 87,
+      "lines": [
+        {
+          "text": "    def forward(self, x):",
+          "line": 79
+        },
+        {
+          "text": "        # 保存原始输入，供旁路连接使用。",
+          "line": null
+        },
+        {
+          "text": "        residual = x # input",
+          "line": 80
+        },
+        {
+          "text": "        # 主路第一组卷积处理。",
+          "line": null
+        },
+        {
+          "text": "        out = self.conv1(x)",
+          "line": 81
+        },
+        {
+          "text": "        # 主路第二组卷积处理。",
+          "line": null
+        },
+        {
+          "text": "        out = self.conv2(out)",
+          "line": 82
+        },
+        {
+          "text": "        # 若形状需要调整，走投影分支。",
+          "line": null
+        },
+        {
+          "text": "        if self.downsample:",
+          "line": 83
+        },
+        {
+          "text": "            # 将旁路输入变换到与主路相同的形状。",
+          "line": null
+        },
+        {
+          "text": "            residual = self.downsample(x)",
+          "line": 84
+        },
+        {
+          "text": "        # 将主路学习的变化与旁路输入相加。",
+          "line": null
+        },
+        {
+          "text": "        out = out + residual",
+          "line": 85
+        },
+        {
+          "text": "        # 对相加结果应用ReLU。",
+          "line": null
+        },
+        {
+          "text": "        out = self.relu(out)",
+          "line": 86
+        },
+        {
+          "text": "        return out",
+          "line": 87
+        }
+      ],
+      "notes": [
+        "这是ResidualBlock类中的forward，卷积层在__init__里定义。",
+        "主路计算F(x)，旁路保留x；必要时downsample对齐形状。",
+        "这是仓库自身实现，不能仅凭名称认为所有细节都与原论文完全一致。"
+      ],
+      "symbol": "ResidualBlock.forward"
+    },
+    "walk": [
+      {
+        "title": "先只看一个小窗口",
+        "body": "把窗口里的数分别乘一组权重，再加起来，得到这个位置的输出。"
+      },
+      {
+        "title": "把同一个窗口移过去",
+        "body": "移到相邻位置，仍用同一组权重。这种在各处重复的小范围计算叫卷积，CNN大量使用它。"
+      },
+      {
+        "title": "网络加深后的另一招",
+        "body": "让一条路保留原输入，另一条路计算修改量，最后两路相加。这叫残差连接，ResNet使用这种结构。"
+      },
+      {
+        "title": "相加要先对齐",
+        "body": "如果两路大小或通道数不同，就先变换到兼容形状。下面代码residual保存原输入，out是主路算出的结果。"
+      }
+    ],
+    "lab": {
+      "goal": "合并残差与主路结果",
+      "starter": "def residual(x, change):\n    # TODO: 合并残差与主路结果\n    return None\n",
+      "solution": "def residual(x, change):\n    return [a+b for a,b in zip(x,change)]\n",
+      "tests": "assert residual([1,2],[.5,-1])==[1.5,1]\nassert residual([0],[3])==[3]",
+      "hint": "输入形状一致，按位置相加。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "读下一句话时，怎么记住前文？",
+    "group": "模型",
+    "goal": "先看懂这件事：对应到代码名字。",
+    "example": "读到“今天下雨，所以带伞”时，后面的判断需要前面的天气信息。",
+    "mechanism": "LSTM增加细胞状态及门控，控制保留、写入和输出；缓解长程依赖训练困难，但不保证永久记忆。时间步共享参数。",
+    "question": "RNN相邻时间步通常共享什么？",
+    "options": [
+      "同一组模型参数",
+      "完全相同的输入",
+      "全部预测答案"
+    ],
+    "answer": 0,
+    "feedback": "共享参数处理不同时间位置，状态则随输入而改变。",
+    "source": "algorithms/deeplearning/lstm.py",
+    "demo": "",
+    "id": 11,
+    "code": {
+      "start": 24,
+      "end": 58,
+      "lines": [
+        {
+          "text": "    def forward(self, x, h_prev, c_prev):",
+          "line": 24
+        },
+        {
+          "text": "        \"\"\"",
+          "line": 25
+        },
+        {
+          "text": "        x: input sequence of shape (T, input_size)",
+          "line": 26
+        },
+        {
+          "text": "        h_prev: initial hidden state (hidden_size, 1)",
+          "line": 27
+        },
+        {
+          "text": "        c_prev: initial cell state (hidden_size, 1)",
+          "line": 28
+        },
+        {
+          "text": "",
+          "line": 29
+        },
+        {
+          "text": "        Returns:",
+          "line": 30
+        },
+        {
+          "text": "        - hidden_states: list of hidden states for each timestep",
+          "line": 31
+        },
+        {
+          "text": "        - h_prev: final hidden state",
+          "line": 32
+        },
+        {
+          "text": "        - c_prev: final cell state",
+          "line": 33
+        },
+        {
+          "text": "        \"\"\"",
+          "line": 34
+        },
+        {
+          "text": "        # 读取时间步数量。",
+          "line": null
+        },
+        {
+          "text": "        T = x.shape[0]",
+          "line": 35
+        },
+        {
+          "text": "        # 准备记录每个时间步的隐藏状态。",
+          "line": null
+        },
+        {
+          "text": "        hidden_states = []",
+          "line": 36
+        },
+        {
+          "text": "",
+          "line": 37
+        },
+        {
+          "text": "        # 按顺序逐步读取序列。",
+          "line": null
+        },
+        {
+          "text": "        for t in range(T):",
+          "line": 38
+        },
+        {
+          "text": "            # 取当前步输入并转成列向量。",
+          "line": null
+        },
+        {
+          "text": "            x_t = x[t].reshape(-1, 1)",
+          "line": 39
+        },
+        {
+          "text": "",
+          "line": 40
+        },
+        {
+          "text": "            # Concatenate hidden state and input",
+          "line": 41
+        },
+        {
+          "text": "            # 拼接上一隐藏状态和当前输入。",
+          "line": null
+        },
+        {
+          "text": "            concat = np.vstack((h_prev, x_t))",
+          "line": 42
+        },
+        {
+          "text": "",
+          "line": 43
+        },
+        {
+          "text": "            # Gates",
+          "line": 44
+        },
+        {
+          "text": "            # 遗忘门：控制旧细胞状态保留多少。",
+          "line": null
+        },
+        {
+          "text": "            f_t = self.sigmoid(self.Wf @ concat + self.bf)      # forget gate",
+          "line": 45
+        },
+        {
+          "text": "            # 输入门：控制新候选信息写入多少。",
+          "line": null
+        },
+        {
+          "text": "            i_t = self.sigmoid(self.Wi @ concat + self.bi)      # input gate",
+          "line": 46
+        },
+        {
+          "text": "            # 计算当前候选记忆，tanh范围为−1到1。",
+          "line": null
+        },
+        {
+          "text": "            c_hat = np.tanh(self.Wc @ concat + self.bc)         # candidate cell",
+          "line": 47
+        },
+        {
+          "text": "            # 输出门：控制当前记忆对外暴露多少。",
+          "line": null
+        },
+        {
+          "text": "            o_t = self.sigmoid(self.Wo @ concat + self.bo)      # output gate",
+          "line": 48
+        },
+        {
+          "text": "",
+          "line": 49
+        },
+        {
+          "text": "            # Cell state update",
+          "line": 50
+        },
+        {
+          "text": "            # 新记忆=保留的旧记忆+写入的新候选。",
+          "line": null
+        },
+        {
+          "text": "            c_prev = f_t * c_prev + i_t * c_hat",
+          "line": 51
+        },
+        {
+          "text": "",
+          "line": 52
+        },
+        {
+          "text": "            # Hidden state update",
+          "line": 53
+        },
+        {
+          "text": "            # 将记忆压缩后经输出门得到隐藏状态。",
+          "line": null
+        },
+        {
+          "text": "            h_prev = o_t * np.tanh(c_prev)",
+          "line": 54
+        },
+        {
+          "text": "",
+          "line": 55
+        },
+        {
+          "text": "            # 记录当前隐藏状态供后续使用。",
+          "line": null
+        },
+        {
+          "text": "            hidden_states.append(h_prev)",
+          "line": 56
+        },
+        {
+          "text": "",
+          "line": 57
+        },
+        {
+          "text": "        return hidden_states, h_prev, c_prev",
+          "line": 58
+        }
+      ],
+      "notes": [
+        "x包含T个时间步；h_prev是隐藏状态，c_prev是细胞状态。",
+        "sigmoid门值在0到1之间，用逐元素乘法控制信息通过量。",
+        "这里只展示前向传播；权重初始化和sigmoid方法在类中其他位置。"
+      ],
+      "symbol": "LSTM.forward"
+    },
+    "walk": [
+      {
+        "title": "每读一步更新一份记忆",
+        "body": "输入当前内容，同时带上上一步记忆，计算新的记忆。这是RNN的基本方式。"
+      },
+      {
+        "title": "记忆也需要取舍",
+        "body": "什么留下、什么加入、什么输出？LSTM用几组0到1之间的门值控制这些比例。"
+      },
+      {
+        "title": "拿一个数字理解门",
+        "body": "旧记忆某项是10，保留比例0.2，就留下2；新信息再按写入比例加进去。实际有很多项一起运算。"
+      },
+      {
+        "title": "对应到代码名字",
+        "body": "f_t控制保留，i_t控制写入，o_t控制输出。c_prev是记忆状态，h_prev是提供给后续计算的隐藏状态；它们不是自然语言文字。"
+      }
+    ],
+    "lab": {
+      "goal": "模拟一个记忆更新",
+      "starter": "def memory(old, keep, candidate, write):\n    # TODO: 模拟一个记忆更新\n    return None\n",
+      "solution": "def memory(old, keep, candidate, write):\n    return old*keep+candidate*write\n",
+      "tests": "assert memory(10,.2,4,.5)==4\nassert memory(10,1,4,0)==10",
+      "hint": "旧记忆乘保留比例，加上候选记忆乘写入比例。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "怎样把更相关的信息多算一点？",
+    "group": "Transformer",
+    "goal": "先看懂这件事：预测未来时不能偷看。",
+    "example": "你有两个信息值10和20。想让第二个影响更大，可以给第一个25%的权重，第二个75%。",
+    "mechanism": "Query表示当前位置用什么方式匹配，Key表示各位置供匹配的特征，Value是匹配后要汇总的内容；三者通常由输入向量乘不同的可学习矩阵产生。softmax先对分数取指数再除以总和，本例是1/(1+3)与3/(1+3)。实际常用向量与缩放点积QKᵀ/√d。因果遮罩先屏蔽未来分数再归一化。下面只操作遮罩，不模拟训练后的语义关系。",
+    "question": "预测下一个字符时，因果遮罩应该屏蔽？",
+    "options": [
+      "所有历史位置",
+      "未来位置",
+      "当前位置和历史位置"
+    ],
+    "answer": 1,
+    "feedback": "训练时目标字符可能已在完整序列中，遮罩防止模型提前读取。",
+    "source": "algorithms/attention/masked_attention.py",
+    "demo": "attention",
+    "id": 12,
+    "code": {
+      "start": 11,
+      "end": 17,
+      "lines": [
+        {
+          "text": "def masked_attention(Q: np.ndarray, K: np.ndarray, V: np.ndarray, mask: np.ndarray) -> np.ndarray:",
+          "line": 11
+        },
+        {
+          "text": "    # 取Query特征维度，用于缩放分数。",
+          "line": null
+        },
+        {
+          "text": "    dk = Q.shape[-1]",
+          "line": 12
+        },
+        {
+          "text": "    # 每个Query与各Key做点积，再除以维度平方根。",
+          "line": null
+        },
+        {
+          "text": "    scores = (Q @ K.T) / np.sqrt(dk)",
+          "line": 13
+        },
+        {
+          "text": "    # 加遮罩，让未来位置的分数变成极大负数。",
+          "line": null
+        },
+        {
+          "text": "    masked_score = scores + mask",
+          "line": 14
+        },
+        {
+          "text": "    # 按每一行softmax，可见位置权重和为1。",
+          "line": null
+        },
+        {
+          "text": "    masked_weights = softmax(masked_score, axis=-1)",
+          "line": 15
+        },
+        {
+          "text": "    # 用注意力权重汇总各位置的Value。",
+          "line": null
+        },
+        {
+          "text": "    output = masked_weights @ V",
+          "line": 16
+        },
+        {
+          "text": "    return output",
+          "line": 17
+        }
+      ],
+      "notes": [
+        "Q、K、V为二维位置×特征矩阵；mask与位置分数矩阵形状兼容。",
+        "mask可见处为0、未来处为极大负数，使softmax后未来权重接近0。",
+        "返回Value的加权汇总，不是注意力权重本身；softmax由同文件函数提供。"
+      ],
+      "symbol": "masked_attention"
+    },
+    "walk": [
+      {
+        "title": "先算加权结果",
+        "body": "10×0.25+20×0.75=17.5。结果更靠近20，因为它占的权重更大。"
+      },
+      {
+        "title": "这些比例由什么决定",
+        "body": "当前位置提供Query，各位置提供Key，用它们算匹配分数。Value则是最后要汇总的内容，刚才就是10和20。"
+      },
+      {
+        "title": "分数先变成比例",
+        "body": "softmax把分数取指数再除以总和。分数0和ln(3)对应指数1和3，比例就是1/4与3/4。比例相加为1。"
+      },
+      {
+        "title": "预测未来时不能偷看",
+        "body": "生成下一个字只能用当前及以前的内容。把未来位置挡住叫因果遮罩。下面切换当前位置，灰色位置就是不能看的。"
+      }
+    ],
+    "lab": {
+      "goal": "算一次注意力加权汇总",
+      "starter": "def attend(values, weights):\n    # TODO: 算一次注意力加权汇总\n    return None\n",
+      "solution": "def attend(values, weights):\n    return sum(v*w for v,w in zip(values,weights))\n",
+      "tests": "assert attend([10,20],[.25,.75])==17.5\nassert attend([10,20],[1,0])==10",
+      "hint": "对应的内容值与权重相乘再求和。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "把这些零件拼成Transformer",
+    "group": "Transformer",
+    "goal": "先看懂这件事：仓库里有两种结构。",
+    "example": "注意力负责汇总位置之间的信息，但完整模型还要处理顺序、加工每个位置的表示。",
+    "mechanism": "仓库transformer.py包含encoder与decoder，decoder还有cross-attention读取encoder输出。MicroGPT使用因果自注意力，没有这个encoder分支。前向运行不代表模型经过训练。",
+    "question": "随机初始化Transformer能前向输出，意味着？",
+    "options": [
+      "已经学会翻译",
+      "形状和计算可能贯通，质量仍需训练评估",
+      "不再需要训练数据"
+    ],
+    "answer": 1,
+    "feedback": "“能输出概率”和“概率有用”是两件事。",
+    "source": "algorithms/attention/transformer.py",
+    "demo": "",
+    "id": 13,
+    "code": {
+      "start": 47,
+      "end": 53,
+      "lines": [
+        {
+          "text": "def transformer_forward(src_tokens: np.ndarray, tgt_tokens: np.ndarray, params: dict,",
+          "line": 47
+        },
+        {
+          "text": "                         n_heads: int, d_model: int) -> np.ndarray:",
+          "line": 48
+        },
+        {
+          "text": "    # 编码源序列，产生可供解码器参考的表示。",
+          "line": null
+        },
+        {
+          "text": "    enc_output = encode(src_tokens, params, n_heads, d_model)",
+          "line": 49
+        },
+        {
+          "text": "    # 用目标前缀与编码结果计算解码表示。",
+          "line": null
+        },
+        {
+          "text": "    dec_output = decode(tgt_tokens, enc_output, params, n_heads, d_model)",
+          "line": 50
+        },
+        {
+          "text": "    # 投影到词表大小，得到每个候选token的分数。",
+          "line": null
+        },
+        {
+          "text": "    logits = output_projection(dec_output, params[\"embedding\"])",
+          "line": 51
+        },
+        {
+          "text": "    # 按词表维度归一化成概率。",
+          "line": null
+        },
+        {
+          "text": "    probs = softmax(logits)",
+          "line": 52
+        },
+        {
+          "text": "    return probs",
+          "line": 53
+        }
+      ],
+      "notes": [
+        "这是完整encoder-decoder Transformer的前向入口。",
+        "decode使用编码器输出，内部包含cross-attention。",
+        "只有前向，没有在这个函数里计算损失、反传或更新权重。"
+      ],
+      "symbol": "transformer_forward"
+    },
+    "walk": [
+      {
+        "title": "先把字符变成数字列表",
+        "body": "每个字符编号查一张表，得到一组数，叫embedding。再加入位置表示，让不同顺序可区分。"
+      },
+      {
+        "title": "让各位置交换信息",
+        "body": "注意力根据匹配程度汇总其他位置的内容。"
+      },
+      {
+        "title": "每个位置再加工",
+        "body": "小型前馈网络对各位置做进一步变换，残差保留原表示，归一化调整数值尺度。重复这些模块组成网络。"
+      },
+      {
+        "title": "仓库里有两种结构",
+        "body": "transformer.py有编码器读输入、解码器生成输出；MicroGPT只有因果生成这条主线。随机参数也能算出结果，但必须训练才可能有用。"
+      }
+    ],
+    "lab": {
+      "goal": "给字符向量加上位置信息",
+      "starter": "def add_position(token, position):\n    # TODO: 给字符向量加上位置信息\n    return None\n",
+      "solution": "def add_position(token, position):\n    return [a+b for a,b in zip(token,position)]\n",
+      "tests": "assert add_position([1,2],[.1,.2])==[1.1,2.2]\nassert add_position([0,0],[3,4])==[3,4]",
+      "hint": "本练习两列表长度一致，按位相加。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "MicroGPT怎么一个字一个字生成名字？",
+    "group": "综合",
+    "goal": "先看懂这件事：生成时没有标准答案提示。",
+    "example": "把名字ana看作三个字符a、n、a。我们要让模型根据已有字符猜下一个。",
+    "mechanism": "当前源码是1层、4头、16维embedding、上下文16，纯Python标量自动微分；训练20步，SGD更新。README的Adam描述与实现不一致。脚本顶层下载数据并训练，不建议当普通库导入。",
+    "question": "生成下一个字符时模型依赖什么？",
+    "options": [
+      "完整未来答案",
+      "当前已有上下文",
+      "测试标签自动提示"
+    ],
+    "answer": 1,
+    "feedback": "每次用已有上下文预测概率，再采样并追加。它不是检索一个完整名字。",
+    "source": "models/microgpt.py",
+    "demo": "",
+    "id": 14,
+    "code": {
+      "start": 251,
+      "end": 271,
+      "lines": [
+        {
+          "text": "def gpt(tokens):",
+          "line": 251
+        },
+        {
+          "text": "    \"\"\"Full forward pass for a list of token IDs.",
+          "line": 252
+        },
+        {
+          "text": "",
+          "line": 253
+        },
+        {
+          "text": "    Returns a list of logit vectors (one per input position).",
+          "line": 254
+        },
+        {
+          "text": "    The logits at position t predict the next token given tokens[0..t].",
+          "line": 255
+        },
+        {
+          "text": "    \"\"\"",
+          "line": 256
+        },
+        {
+          "text": "    # Build input embeddings: sum token embedding + position embedding for each position",
+          "line": 257
+        },
+        {
+          "text": "    # 查字符向量和位置向量，并逐维相加。",
+          "line": null
+        },
+        {
+          "text": "    x_seq = [[te + pe for te, pe in zip(wte[tok], wpe[pos])] for pos, tok in enumerate(tokens)]",
+          "line": 258
+        },
+        {
+          "text": "",
+          "line": 259
+        },
+        {
+          "text": "    # 依次通过各个Transformer层。",
+          "line": null
+        },
+        {
+          "text": "    for i in range(n_layer):",
+          "line": 260
+        },
+        {
+          "text": "        # Pre-norm: normalise before attention (more stable than post-norm)",
+          "line": 261
+        },
+        {
+          "text": "        # 每个位置先做RMS归一化。",
+          "line": null
+        },
+        {
+          "text": "        normed = [rmsnorm(x) for x in x_seq]",
+          "line": 262
+        },
+        {
+          "text": "        # 因果多头注意力在允许的历史位置间汇总信息。",
+          "line": null
+        },
+        {
+          "text": "        attn_out = attention_block(normed, wq[i], wk[i], wv[i], wo[i])",
+          "line": 263
+        },
+        {
+          "text": "        # Residual connection: add attention output back to the input",
+          "line": 264
+        },
+        {
+          "text": "        # 把注意力结果与原表示残差相加。",
+          "line": null
+        },
+        {
+          "text": "        x_seq = [[a + b for a, b in zip(attn, x)] for attn, x in zip(attn_out, x_seq)]",
+          "line": 265
+        },
+        {
+          "text": "",
+          "line": 266
+        },
+        {
+          "text": "        # Pre-norm + MLP + residual connection",
+          "line": 267
+        },
+        {
+          "text": "        # 归一化后通过MLP，再与原表示残差相加。",
+          "line": null
+        },
+        {
+          "text": "        x_seq = [[a + b for a, b in zip(mlp_block(rmsnorm(x), w_fc1[i], w_fc2[i]), x)] for x in x_seq]",
+          "line": 268
+        },
+        {
+          "text": "",
+          "line": 269
+        },
+        {
+          "text": "    # Project each position's final embedding to vocabulary logits",
+          "line": 270
+        },
+        {
+          "text": "    # 把每个位置向量投影为词表logits，供下一字符预测。",
+          "line": null
+        },
+        {
+          "text": "    return [linear(x, lm_head) for x in x_seq]",
+          "line": 271
+        }
+      ],
+      "notes": [
+        "token是字符编号；查表得到向量，再加上可学习位置向量。",
+        "每层先注意力再MLP，各有归一化和残差。",
+        "输出logits是未归一化分数，下一步还要softmax；这里不是整个训练脚本。"
+      ],
+      "symbol": "gpt"
+    },
+    "walk": [
+      {
+        "title": "给训练数据安排问题和答案",
+        "body": "开头标记后应该是a，a后应该是n，an后应该是a，ana后应该结束。一个名字能提供多次下一字符练习。"
+      },
+      {
+        "title": "模型先给每个候选打分",
+        "body": "输入编号变成向量，经注意力与小网络，输出词表中各字符的分数；softmax再把分数变成概率。"
+      },
+      {
+        "title": "用答案检查，再改参数",
+        "body": "真实下一个字符的概率越低，损失越大。反传得到梯度，再按梯度更新参数。当前源码使用SGD，不是README写的Adam。"
+      },
+      {
+        "title": "生成时没有标准答案提示",
+        "body": "从开头标记出发，按概率选一个字符，追加到已有内容，再预测下一个。这个小模型只训练少量步骤，不是通用聊天机器人。"
+      }
+    ],
+    "lab": {
+      "goal": "构造下一字符训练样本",
+      "starter": "def shift(tokens):\n    # TODO: 构造下一字符训练样本\n    return None\n",
+      "solution": "def shift(tokens):\n    return (tokens[:-1], tokens[1:])\n",
+      "tests": "assert shift([0,1,2,1,0])==([0,1,2,1],[1,2,1,0])\nassert shift([0,3,0])==([0,3],[3,0])",
+      "hint": "输入去掉最后一项，目标去掉第一项。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  },
+  {
+    "title": "怎么知道自己真的理解了？",
+    "group": "实践",
+    "goal": "先看懂这件事：分清验证到了什么。",
+    "example": "重新做一次(2+3)×4的例子。先在纸上算，再让程序核对，不要先看答案。",
+    "mechanism": "第二次独立练习：重新创建节点，把c改为6。先在纸上写预测，再运行；预期f=30，a和b的梯度均为6，c的梯度仍为5。若不符，检查是否创建了新节点、是否调用backward、是否误读了data和grad。安装步骤：git clone https://github.com/samitmohan/ML.git，然后cd ML，再uv sync --group dev（需要先安装uv及Python3.10+）。完整仓库示例需在本地运行，下方独立练习可在浏览器运行；小测通过不代表这项实践完成。测试通过也不保证全部算法或泛化效果。",
+    "question": "验证新模型泛化应主要观察？",
+    "options": [
+      "只看训练集表现",
+      "从未参与训练的留出数据表现",
+      "文件行数"
+    ],
+    "answer": 1,
+    "feedback": "留出数据用于检查是否能应对没见过的样本，同时避免泄漏及反复调参污染。",
+    "source": "tests/test_autograd.py",
+    "demo": "",
+    "id": 15,
+    "code": {
+      "start": 52,
+      "end": 62,
+      "lines": [
+        {
+          "text": "def test_chain_rule():",
+          "line": 52
+        },
+        {
+          "text": "    # f = (a + b) * c",
+          "line": 53
+        },
+        {
+          "text": "    # 创建可记录梯度的输入a。",
+          "line": null
+        },
+        {
+          "text": "    a = Value(2.0)",
+          "line": 54
+        },
+        {
+          "text": "    # 创建第二个输入b。",
+          "line": null
+        },
+        {
+          "text": "    b = Value(3.0)",
+          "line": 55
+        },
+        {
+          "text": "    # 创建乘法因子c。",
+          "line": null
+        },
+        {
+          "text": "    c = Value(4.0)",
+          "line": 56
+        },
+        {
+          "text": "    # 先相加再相乘，自动连接计算图。",
+          "line": null
+        },
+        {
+          "text": "    d = (a + b) * c  # d = 20",
+          "line": 57
+        },
+        {
+          "text": "    # 从结果反向传播，计算各输入的梯度。",
+          "line": null
+        },
+        {
+          "text": "    d.backward()",
+          "line": 58
+        },
+        {
+          "text": "    # 检查前向输出是否符合手算。",
+          "line": null
+        },
+        {
+          "text": "    assert d.data == 20.0",
+          "line": 59
+        },
+        {
+          "text": "    # 检查a的梯度，也就是乘法因子c。",
+          "line": null
+        },
+        {
+          "text": "    assert a.grad == 4.0  # dd/da = c = 4",
+          "line": 60
+        },
+        {
+          "text": "    # 检查b的梯度，它与a走同样的路径。",
+          "line": null
+        },
+        {
+          "text": "    assert b.grad == 4.0  # dd/db = c = 4",
+          "line": 61
+        },
+        {
+          "text": "    # 检查c的梯度，应该等于a+b。",
+          "line": null
+        },
+        {
+          "text": "    assert c.grad == 5.0  # dd/dc = (a+b) = 5",
+          "line": 62
+        }
+      ],
+      "notes": [
+        "这是与本课练习直接对应的真实测试，替代模型形状测试作为入口。",
+        "在仓库根目录运行uv run pytest tests/test_autograd.py。",
+        "先不看断言，手算答案再核对；这才能发现是数学还是代码理解出错。"
+      ],
+      "symbol": "test_chain_rule"
+    },
+    "walk": [
+      {
+        "title": "先给出自己的预测",
+        "body": "输出应是20。第一个数变化1会让输出变化4，第二个同样，第三个变化1会让输出变化5。"
+      },
+      {
+        "title": "运行原仓库的检查",
+        "body": "在已准备好的Python与uv环境中，克隆仓库、安装依赖，再执行uv run pytest tests/test_autograd.py。下面是其中的真实测试。"
+      },
+      {
+        "title": "只改一个数再预测",
+        "body": "把c从4改成6，重新创建所有节点。输出应为30，a、b的梯度为6，c的梯度仍为5。把对应断言改成你先算出的结果。"
+      },
+      {
+        "title": "分清验证到了什么",
+        "body": "这说明这一小段计算符合预期，不说明全部模型都正确。上方源码阅读编辑器不执行Python；下方配套练习可在浏览器运行；完成选择题也不等于完成这次实操。"
+      }
+    ],
+    "lab": {
+      "goal": "计算留出数据的正确率",
+      "starter": "def accuracy(predicted, actual):\n    # TODO: 计算留出数据的正确率\n    return None\n",
+      "solution": "def accuracy(predicted, actual):\n    return sum(a==b for a,b in zip(predicted,actual))/len(actual)\n",
+      "tests": "assert accuracy([1,0,1],[1,1,1])==2/3\nassert accuracy([0,1],[0,1])==1",
+      "hint": "逐项比较，正确个数除以非空样本数。",
+      "expected": "运行检查后所有断言通过；不仅要满足第一组输入。"
+    }
+  }
+]

@@ -1,0 +1,11 @@
+starter: 尚未通过。
+PythonError: Traceback (most recent call last):
+  File "/lib/python312.zip/_pyodide/_base.py", line 597, in eval_code_async
+    await CodeRunner(
+  File "/lib/python312.zip/_pyodide/_base.py", line 411, in run_async
+    coroutine = eval(self.code, globals, locals)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<exec>", line 1, in <module>
+AssertionError
+
+PASS real browser Python: fail/pass/reference separation/persistence/stale proof/timeout/output cap

@@ -1,0 +1,118 @@
+{
+  "lessons": 16,
+  "validation": "Standard-library Python teaching labs only; full upstream models not executed.",
+  "results": [
+    {
+      "id": 32,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 33,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 34,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 35,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 36,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 37,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 38,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 39,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 40,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 41,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 42,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 43,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 44,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 45,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 46,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    },
+    {
+      "id": 47,
+      "solution": "passed",
+      "starter": "assertion_failed",
+      "assertions": 2,
+      "source_exact": true
+    }
+  ]
+}

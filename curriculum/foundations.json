@@ -1,0 +1,1630 @@
+[
+  {
+    "id": 16,
+    "title": "先数行列：NumPy shape 与 reshape",
+    "group": "项目课程 · 数学与NumPy",
+    "goal": "把 6 个数按指定行列重新排好",
+    "example": "[1,2,3,4,5,6] 排成 2 行 3 列，得到 [[1,2,3],[4,5,6]]。",
+    "mechanism": "shape 描述每个轴的长度；reshape 改变布局解释，元素总数必须不变。",
+    "walk": [
+      {
+        "title": "数元素",
+        "body": "2×3=6，3×2=6；2×4=8 不成立。"
+      },
+      {
+        "title": "按行装入",
+        "body": "第一行取前 3 项，第二行取后 3 项。"
+      },
+      {
+        "title": "看原代码",
+        "body": "(3,) 与 (3,1) 不同：后者明确有行轴和列轴。"
+      },
+      {
+        "title": "迁移到模型",
+        "body": "样本表常用 (样本数, 特征数)，不要把 3 个特征误当 3 个样本。"
+      }
+    ],
+    "question": "6 个数不能 reshape 成哪种形状？",
+    "options": [
+      "(2,3)",
+      "(3,2)",
+      "(2,4)"
+    ],
+    "answer": 2,
+    "feedback": "2×4 需要 8 个元素。",
+    "source": "numpy/Scientific_Compute/npreshape.py",
+    "demo": "",
+    "code": {
+      "symbol": "reshape 示例",
+      "start": 4,
+      "end": 13,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 先写出元素总数，再看目标形状。"
+        },
+        {
+          "line": 4,
+          "text": "m = np.array([1,2,3]) # m = 3 "
+        },
+        {
+          "line": 5,
+          "text": "n = np.array([1,2]) # n = 2"
+        },
+        {
+          "line": 6,
+          "text": "print(f\"n : {n}\")"
+        },
+        {
+          "line": 7,
+          "text": "print(f\"m's shape : {m.shape}, n's shape : {n.shape}\")"
+        },
+        {
+          "line": 8,
+          "text": "# cant matrix multiply them rn, different shapes -> reshape so that (m * p) and (p * n) = p = p (matmul rules)"
+        },
+        {
+          "line": 9,
+          "text": "m1 = m.reshape((3,1))"
+        },
+        {
+          "line": 10,
+          "text": "n1 = n.reshape((1,2))"
+        },
+        {
+          "line": 11,
+          "text": "print(\"\\n\")"
+        },
+        {
+          "line": 12,
+          "text": "print(f\"m1 now: {m1}\\n, n1 now: {n1}\")"
+        },
+        {
+          "line": 13,
+          "text": "print(np.dot(m1, n1))"
+        }
+      ],
+      "notes": [
+        "先写出元素总数，再看目标形状。",
+        "原文件使用 NumPy；练习用列表模拟按行重排。",
+        "reshape 不保证总是拷贝，也不要把它当转置。"
+      ]
+    },
+    "lab": {
+      "goal": "把 6 个数按指定行列重新排好。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def reshape(values, rows, cols):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def reshape(values, rows, cols):\n    if rows < 0 or cols < 0 or rows * cols != len(values):\n        raise ValueError(\"shape mismatch\")\n    return [values[i*cols:(i+1)*cols] for i in range(rows)]\n",
+      "tests": "assert reshape([1,2,3,4,5,6],2,3)==[[1,2,3],[4,5,6]]\nassert reshape([],0,3)==[]\ntry:\n    reshape([1,2],2,2)\n    assert False, \"必须拒绝元素数不符\"\nexcept ValueError:\n    pass",
+      "hint": "每行起点是 i*cols；先检查 rows*cols。",
+      "expected": "正常重排正确；空输入正确；不匹配时报 ValueError。"
+    }
+  },
+  {
+    "id": 17,
+    "title": "每行加同一份：广播",
+    "group": "项目课程 · 数学与NumPy",
+    "goal": "给矩阵每行加上同一偏置向量",
+    "example": "[[4,5,6],[7,8,9]] 加 [1,2,3] 得 [[5,7,9],[8,10,12]]。",
+    "mechanism": "广播从末尾轴比较：大小相同或其中一个为 1 才兼容。它不是任意形状自动匹配。",
+    "walk": [
+      {
+        "title": "第一行",
+        "body": "4+1=5，5+2=7，6+3=9。"
+      },
+      {
+        "title": "第二行",
+        "body": "7+1=8，8+2=10，9+3=12。"
+      },
+      {
+        "title": "检查宽度",
+        "body": "(2,3) 与 (3,) 末尾都是 3，因此每行复用向量。"
+      },
+      {
+        "title": "模型用途",
+        "body": "一批样本的线性输出常加同一组 bias。"
+      }
+    ],
+    "question": "(2,3) 能直接广播相加哪个形状？",
+    "options": [
+      "(2,)",
+      "(3,)",
+      "(4,)"
+    ],
+    "answer": 1,
+    "feedback": "末尾轴 3 对 3 匹配。",
+    "source": "numpy/Scientific_Compute/npbroadcasting.py",
+    "demo": "",
+    "code": {
+      "symbol": "广播示例",
+      "start": 1,
+      "end": 8,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 画两行三列再逐项相加。"
+        },
+        {
+          "line": 1,
+          "text": "# Broadcasting in numpy"
+        },
+        {
+          "line": 2,
+          "text": "import numpy as np"
+        },
+        {
+          "line": 3,
+          "text": ""
+        },
+        {
+          "line": 4,
+          "text": "# perform vectorized ops b/w two arrays even if dimension mismatch"
+        },
+        {
+          "line": 5,
+          "text": "print(\"Broadcasting,adding ary (3 columns)\")"
+        },
+        {
+          "line": 6,
+          "text": "ary = np.array([1,2,3])"
+        },
+        {
+          "line": 7,
+          "text": "ary2d=[[4,5,6], [7,8,9]]"
+        },
+        {
+          "line": 8,
+          "text": "print(f\"Broadcasted sum: {ary2d + ary}\") # shape mismatch but can still add by broadcast"
+        }
+      ],
+      "notes": [
+        "画两行三列再逐项相加。",
+        "本练习只支持矩阵加行向量，是完整广播规则的子集。",
+        "原代码的 ary 是 ndarray，触发 NumPy 的数组加法。"
+      ]
+    },
+    "lab": {
+      "goal": "给矩阵每行加上同一偏置向量。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def add_bias(matrix, bias):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def add_bias(matrix, bias):\n    if any(len(row)!=len(bias) for row in matrix):\n        raise ValueError(\"width mismatch\")\n    return [[x+b for x,b in zip(row,bias)] for row in matrix]\n",
+      "tests": "assert add_bias([[4,5,6],[7,8,9]],[1,2,3])==[[5,7,9],[8,10,12]]\nassert add_bias([], [1])==[]\nassert add_bias([[-1,2]],[1,-2])==[[0,0]]",
+      "hint": "外层遍历行，内层把对应位置相加。",
+      "expected": "两行共享偏置；负数及空矩阵也通过。"
+    }
+  },
+  {
+    "id": 18,
+    "title": "转置与点积：把方向对齐",
+    "group": "项目课程 · 数学与NumPy",
+    "goal": "计算矩阵每行与向量的点积",
+    "example": "[[1,2],[3,4]] 乘 [10,20]，两行分别为 50 和 110。",
+    "mechanism": "点积先对应相乘再求和；转置把行列交换，(2,3) 变 (3,2)，不等同于 reshape。",
+    "walk": [
+      {
+        "title": "乘第一行",
+        "body": "1×10+2×20=50。"
+      },
+      {
+        "title": "乘第二行",
+        "body": "3×10+4×20=110。"
+      },
+      {
+        "title": "对齐内维",
+        "body": "矩阵列数 2 必须等于向量长度 2。"
+      },
+      {
+        "title": "看转置用途",
+        "body": "训练中 X.T 把按样本累积的误差转成每个特征的梯度。"
+      }
+    ],
+    "question": "[1,2] 与 [3,4] 的点积是多少？",
+    "options": [
+      "11",
+      "[3,8]",
+      "10"
+    ],
+    "answer": 0,
+    "feedback": "1×3+2×4=11。",
+    "source": "algorithms/math/matrix_dot_vector.py",
+    "demo": "",
+    "code": {
+      "symbol": "matrix_dot_vector",
+      "start": 4,
+      "end": 12,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 点积输出标量，逐元素乘法输出向量。"
+        },
+        {
+          "line": 4,
+          "text": "def matrix_dot_vector(a: list[list[int | float]], b: list[int | float]) -> list[int | float]:"
+        },
+        {
+          "line": 5,
+          "text": "    # num(col) of matrix == len of vector"
+        },
+        {
+          "line": 6,
+          "text": "    if len(a) == 0 or len(a[0]) != len(b):"
+        },
+        {
+          "line": 7,
+          "text": "        return -1"
+        },
+        {
+          "line": 8,
+          "text": "    res = []"
+        },
+        {
+          "line": 9,
+          "text": "    for row in a:"
+        },
+        {
+          "line": 10,
+          "text": "        dot_prod = sum(row[i] * b[i] for i in range(len(b)))"
+        },
+        {
+          "line": 11,
+          "text": "        res.append(dot_prod)"
+        },
+        {
+          "line": 12,
+          "text": "    return res"
+        }
+      ],
+      "notes": [
+        "点积输出标量，逐元素乘法输出向量。",
+        "原实现不检查所有行宽；练习补齐规则。",
+        "空矩阵在此约定返回 -1，和源文件一致。"
+      ]
+    },
+    "lab": {
+      "goal": "计算矩阵每行与向量的点积。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def matvec(matrix, vector):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def matvec(matrix, vector):\n    if not matrix or any(len(row)!=len(vector) for row in matrix):\n        return -1\n    return [sum(x*y for x,y in zip(row,vector)) for row in matrix]\n",
+      "tests": "assert matvec([[1,2],[3,4]],[10,20])==[50,110]\nassert matvec([],[])==-1\nassert matvec([[1,2]],[1])==-1",
+      "hint": "每行 sum 对应乘积；宽度不匹配返回 -1。",
+      "expected": "得到 [50,110]，非法维度被拒绝。"
+    }
+  },
+  {
+    "id": 19,
+    "title": "用差值看导数",
+    "group": "项目课程 · 数学与NumPy",
+    "goal": "用中心差分估计平方函数的斜率",
+    "example": "x=3，取 3.001² 与 2.999²，差除以 0.002，约为 6。",
+    "mechanism": "导数描述局部变化率；中心差分 [f(x+h)-f(x-h)]/(2h) 可核对解析导数。",
+    "walk": [
+      {
+        "title": "算两侧",
+        "body": "9.006001 与 8.994001 相差 0.012。"
+      },
+      {
+        "title": "除距离",
+        "body": "0.012/0.002=6。"
+      },
+      {
+        "title": "联系源函数",
+        "body": "源文件对 c*x^n 返回 c*n*x^(n-1)，平方在 3 的导数也为 6。"
+      },
+      {
+        "title": "数值限制",
+        "body": "h 太大会偏离局部，太小会有浮点消减误差。"
+      }
+    ],
+    "question": "x² 在 x=-2 的导数是多少？",
+    "options": [
+      "4",
+      "-4",
+      "0"
+    ],
+    "answer": 1,
+    "feedback": "2x=-4；函数值非负不代表斜率非负。",
+    "source": "algorithms/machinelearning/derivative.py",
+    "demo": "",
+    "code": {
+      "symbol": "poly_term_derivative",
+      "start": 2,
+      "end": 4,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 先用数值差分建立斜率直觉。"
+        },
+        {
+          "line": 2,
+          "text": "def poly_term_derivative(c: float, x: float, n: float) -> float:"
+        },
+        {
+          "line": 3,
+          "text": "    derivative = c * n * x**(n-1)"
+        },
+        {
+          "line": 4,
+          "text": "    return derivative"
+        }
+      ],
+      "notes": [
+        "先用数值差分建立斜率直觉。",
+        "源代码是幂函数解析导数，并非差分实现。",
+        "练习可换成 x³ 验证泛化，不要写死 2*x。"
+      ]
+    },
+    "lab": {
+      "goal": "用中心差分估计平方函数的斜率。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def central_diff(f, x, h=0.001):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def central_diff(f, x, h=0.001):\n    if h<=0:\n        raise ValueError(\"h must be positive\")\n    return (f(x+h)-f(x-h))/(2*h)\n",
+      "tests": "assert abs(central_diff(lambda x:x*x,3)-6)<1e-6\nassert abs(central_diff(lambda x:x*x,-2)+4)<1e-6\nassert abs(central_diff(lambda x:7,0))<1e-6\nassert abs(central_diff(lambda x:x**3,2)-12)<1e-4",
+      "hint": "调用 f 两次；分母是 2*h。",
+      "expected": "平方、立方和常数函数的斜率通过误差检查。"
+    }
+  },
+  {
+    "id": 20,
+    "title": "一起涨多少：协方差到 PCA",
+    "group": "项目课程 · 数学与NumPy",
+    "goal": "计算两个特征的样本协方差",
+    "example": "x=[1,2,3]、y=[2,4,6]，偏差乘积之和为 4，除以 n-1=2 得 2。",
+    "mechanism": "协方差记录共同变化；PCA 在协方差矩阵上寻找方差最大的方向。原实现先标准化，再返回主方向，不是投影后的样本。",
+    "walk": [
+      {
+        "title": "减各自均值",
+        "body": "x 均值 2，y 均值 4，偏差为 [-1,0,1] 与 [-2,0,2]。"
+      },
+      {
+        "title": "乘并求和",
+        "body": "2+0+2=4，样本协方差为 2。"
+      },
+      {
+        "title": "理解方向",
+        "body": "这些点沿 y=2x 排列；保留这一方向可压成一个坐标。"
+      },
+      {
+        "title": "核对返回值",
+        "body": "源函数取 eigenvectors 的前 k 列；投影还需 scaled_data @ principal_components。"
+      }
+    ],
+    "question": "y=[6,4,2] 时协方差为？",
+    "options": [
+      "2",
+      "0",
+      "-2"
+    ],
+    "answer": 2,
+    "feedback": "偏差相反，乘积和为 -4，除以 2 得 -2。",
+    "source": "algorithms/machinelearning/pca.py",
+    "demo": "",
+    "code": {
+      "symbol": "pca",
+      "start": 52,
+      "end": 66,
+      "lines": [
+        {
+          "line": null,
+          "text": "# axis=0 对每列特征统计；不要照抄源注释把它叫按行统计。"
+        },
+        {
+          "line": 52,
+          "text": "def pca(data: np.ndarray, k: int) -> np.ndarray:"
+        },
+        {
+          "line": 53,
+          "text": "    # step1 : standardise data"
+        },
+        {
+          "line": 54,
+          "text": "    mean = np.mean(data, axis=0)  # rows {axis=1 is columns}"
+        },
+        {
+          "line": 55,
+          "text": "    std_dev = np.std(data, axis=0)  # rows"
+        },
+        {
+          "line": 56,
+          "text": "    std_dev[std_dev == 0] = 1.0  # cases where std_dev = 0 to avoid div by 0"
+        },
+        {
+          "line": 57,
+          "text": "    scaled_data = (data - mean) / std_dev"
+        },
+        {
+          "line": 58,
+          "text": "    # step2 : cov matrix"
+        },
+        {
+          "line": 59,
+          "text": "    cov_matrix = np.cov(scaled_data.T)  # .cov expects observations as columns"
+        },
+        {
+          "line": 60,
+          "text": "    # step3 : ev and vectors"
+        },
+        {
+          "line": 61,
+          "text": "    eigenval, eigenvectors = np.linalg.eig(cov_matrix)"
+        },
+        {
+          "line": 62,
+          "text": "    # step4 : sort based highest and choose k"
+        },
+        {
+          "line": 63,
+          "text": "    sorted_idx = np.argsort(eigenval)[::-1]"
+        },
+        {
+          "line": 64,
+          "text": "    sorted_eigenvectors = eigenvectors[:, sorted_idx]"
+        },
+        {
+          "line": 65,
+          "text": "    principal_components = sorted_eigenvectors[:, :k]"
+        },
+        {
+          "line": 66,
+          "text": "    return np.round(principal_components, 4)"
+        }
+      ],
+      "notes": [
+        "axis=0 对每列特征统计；不要照抄源注释把它叫按行统计。",
+        "标准差为零的列由源代码替换成 1，避免除零。",
+        "浏览器仅练协方差，不求特征值，也不运行 sklearn。"
+      ]
+    },
+    "lab": {
+      "goal": "计算两个特征的样本协方差。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def covariance(x, y):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def covariance(x, y):\n    if len(x)!=len(y) or len(x)<2:\n        raise ValueError(\"need paired samples\")\n    mx, my = sum(x)/len(x), sum(y)/len(y)\n    return sum((a-mx)*(b-my) for a,b in zip(x,y))/(len(x)-1)\n",
+      "tests": "assert covariance([1,2,3],[2,4,6])==2\nassert covariance([1,2,3],[6,4,2])==-2\nassert covariance([2,2],[1,5])==0",
+      "hint": "先算两个均值，分母用 n-1。",
+      "expected": "正相关 2、负相关 -2、常量特征 0。"
+    }
+  },
+  {
+    "id": 21,
+    "title": "线性回归：亲手更新一次权重",
+    "group": "项目课程 · 传统ML",
+    "goal": "实现无截距一元回归的一次梯度更新",
+    "example": "x=[1,2]，y=[2,4]，w=0，误差 [-2,-4]，平均 x*误差=-5；学习率 0.1 得 w=0.5。",
+    "mechanism": "使用半均方误差时梯度为 mean(x*(w*x-y))。源代码梯度没有系数 2，对应此损失约定。",
+    "walk": [
+      {
+        "title": "先预测",
+        "body": "0×[1,2]=[0,0]。"
+      },
+      {
+        "title": "再算误差",
+        "body": "预测减真实为 [-2,-4]。"
+      },
+      {
+        "title": "累积梯度",
+        "body": "(1×-2+2×-4)/2=-5。"
+      },
+      {
+        "title": "更新检查",
+        "body": "0-0.1×(-5)=0.5，朝目标斜率 2 靠近。"
+      }
+    ],
+    "question": "当前梯度 -5，学习率 0.1，权重 0 更新为？",
+    "options": [
+      "-0.5",
+      "0.5",
+      "5"
+    ],
+    "answer": 1,
+    "feedback": "参数减去学习率乘梯度，因此增加 0.5。",
+    "source": "algorithms/machinelearning/linear_regression.py",
+    "demo": "",
+    "code": {
+      "symbol": "linear_regression_gradient_descent 核心循环",
+      "start": 61,
+      "end": 68,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 源文件同时有正规方程与迭代法。"
+        },
+        {
+          "line": 61,
+          "text": "    m, n = X.shape"
+        },
+        {
+          "line": 62,
+          "text": "    theta = np.zeros(n)  # slope"
+        },
+        {
+          "line": 63,
+          "text": "    for _ in range(iterations):"
+        },
+        {
+          "line": 64,
+          "text": "        y_pred = X @ theta"
+        },
+        {
+          "line": 65,
+          "text": "        error = y_pred - y"
+        },
+        {
+          "line": 66,
+          "text": "        gradients = 1 / m * (X.T @ error)"
+        },
+        {
+          "line": 67,
+          "text": "        theta -= alpha * gradients"
+        },
+        {
+          "line": 68,
+          "text": "    return np.round(theta, 4).tolist()"
+        }
+      ],
+      "notes": [
+        "源文件同时有正规方程与迭代法。",
+        "原函数用矩阵同时更新所有权重；练习只有一个权重。",
+        "需要截距时可增加一列全 1 特征。"
+      ]
+    },
+    "lab": {
+      "goal": "实现无截距一元回归的一次梯度更新。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def step(x, y, weight, rate):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def step(x, y, weight, rate):\n    grad=sum(a*(weight*a-b) for a,b in zip(x,y))/len(x)\n    return weight-rate*grad\n",
+      "tests": "assert abs(step([1,2],[2,4],0,0.1)-0.5)<1e-9\nassert step([1,2],[2,4],2,0.1)==2\nassert step([0],[8],3,0.2)==3",
+      "hint": "使用预测减真实，别颠倒误差符号。",
+      "expected": "一次更新到 0.5；已拟合与零输入不移动权重。"
+    }
+  },
+  {
+    "id": 22,
+    "title": "逻辑回归：分数变概率",
+    "group": "项目课程 · 传统ML",
+    "goal": "把线性分数变成二分类标签",
+    "example": "权重 [1,1]、样本 [1,1] 得分 2，sigmoid≈0.881，预测 1；[-1,-1] 得约 0.119。",
+    "mechanism": "sigmoid 把实数映射到 (0,1)，再与阈值比较。它是模型概率输出，不自动保证校准准确。",
+    "walk": [
+      {
+        "title": "先加权",
+        "body": "1×1+1×1+0=2。"
+      },
+      {
+        "title": "压缩分数",
+        "body": "1/(1+exp(-2))≈0.881。"
+      },
+      {
+        "title": "比较阈值",
+        "body": "0.881≥0.5，输出 1。"
+      },
+      {
+        "title": "边界行为",
+        "body": "分数为 0 时概率 0.5；本仓库使用 ≥，所以预测 1。"
+      }
+    ],
+    "question": "分数 0 在本仓库预测为？",
+    "options": [
+      "0",
+      "1",
+      "无法预测"
+    ],
+    "answer": 1,
+    "feedback": "源码 sigmoid >= threshold 包含等号。",
+    "source": "algorithms/machinelearning/logistic_regression.py",
+    "demo": "",
+    "code": {
+      "symbol": "predict",
+      "start": 21,
+      "end": 25,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 原函数返回标签，不直接返回概率。"
+        },
+        {
+          "line": 21,
+          "text": "def predict(X, weights, bias):"
+        },
+        {
+          "line": 22,
+          "text": "    forward_pass = np.dot(X, weights) + bias"
+        },
+        {
+          "line": 23,
+          "text": "    sigmoid = 1 / (1 + np.exp(-forward_pass))"
+        },
+        {
+          "line": 24,
+          "text": "    threshold = .5"
+        },
+        {
+          "line": 25,
+          "text": "    return np.round(sigmoid >= threshold).astype(int)"
+        }
+      ],
+      "notes": [
+        "原函数返回标签，不直接返回概率。",
+        "稳定实现可按 z 的正负分支，避免 exp 溢出。",
+        "练习只实现推理，未训练权重。"
+      ]
+    },
+    "lab": {
+      "goal": "把线性分数变成二分类标签。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def classify(x, weights, bias):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def classify(x, weights, bias):\n    import math\n    z=sum(a*b for a,b in zip(x,weights))+bias\n    p=1/(1+math.exp(-z)) if z>=0 else math.exp(z)/(1+math.exp(z))\n    return int(p>=0.5)\n",
+      "tests": "assert classify([1,1],[1,1],0)==1\nassert classify([-1,-1],[1,1],0)==0\nassert classify([0],[1],0)==1\nassert classify([-1000],[1],0)==0",
+      "hint": "先算 z，再稳定计算 sigmoid，最后用 >=。",
+      "expected": "正负分数、阈值边界和极端负数全部正确。"
+    }
+  },
+  {
+    "id": 23,
+    "title": "KNN：让最近邻投票",
+    "group": "项目课程 · 传统ML",
+    "goal": "完成一维 K 近邻分类",
+    "example": "训练点 0:A、2:A、5:B，查询 4，k=1 选 B，k=3 则 A 以 2:1 胜出。",
+    "mechanism": "KNN 保存训练样本，预测时计算距离、选最近 k 项再投票。",
+    "walk": [
+      {
+        "title": "列距离",
+        "body": "到 0、2、5 的距离分别为 4、2、1。"
+      },
+      {
+        "title": "挑邻居",
+        "body": "k=1 只保留距离 1 的 B。"
+      },
+      {
+        "title": "改变 k",
+        "body": "k=3 纳入三个点，多数为 A。"
+      },
+      {
+        "title": "确定平票",
+        "body": "练习票数相同时选排序后的较小标签；原 Counter 按首次出现处理。"
+      }
+    ],
+    "question": "同样数据查询 4，k=3 输出？",
+    "options": [
+      "B",
+      "A",
+      "4"
+    ],
+    "answer": 1,
+    "feedback": "三邻居中两个 A、一个 B。",
+    "source": "algorithms/machinelearning/knn.py",
+    "demo": "",
+    "code": {
+      "symbol": "KNNClassifier.predict_new",
+      "start": 31,
+      "end": 39,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 源实现是多维欧氏距离；练习为一维。"
+        },
+        {
+          "line": 31,
+          "text": "    def euclid_dist(self, x1, x2):"
+        },
+        {
+          "line": 32,
+          "text": "        return np.sqrt(np.sum((x1-x2)**2))"
+        },
+        {
+          "line": 33,
+          "text": ""
+        },
+        {
+          "line": 34,
+          "text": "    def predict_new(self, x_new):"
+        },
+        {
+          "line": 35,
+          "text": "        dist = [self.euclid_dist(x_new, x_train) for x_train in self.x_train]"
+        },
+        {
+          "line": 36,
+          "text": "        k_idx = np.argsort(dist)[:self.k]"
+        },
+        {
+          "line": 37,
+          "text": "        k_nearest_labels = [self.y_train[i] for i in k_idx]"
+        },
+        {
+          "line": 38,
+          "text": "        most_common = Counter(k_nearest_labels).most_common(1)"
+        },
+        {
+          "line": 39,
+          "text": "        return most_common[0][0] # returns label (element)"
+        }
+      ],
+      "notes": [
+        "源实现是多维欧氏距离；练习为一维。",
+        "距离受量纲影响，先在训练集拟合缩放参数。",
+        "明确平票规则，避免结果随输入顺序意外变化。"
+      ]
+    },
+    "lab": {
+      "goal": "完成一维 K 近邻分类。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def knn(points, labels, query, k):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def knn(points, labels, query, k):\n    if not 1<=k<=len(points):\n        raise ValueError(\"invalid k\")\n    indices=sorted(range(len(points)),key=lambda i:(abs(points[i]-query),i))[:k]\n    votes=[labels[i] for i in indices]\n    return min(set(votes),key=lambda label:(-votes.count(label),label))\n",
+      "tests": "assert knn([0,2,5],[\"A\",\"A\",\"B\"],4,1)==\"B\"\nassert knn([0,2,5],[\"A\",\"A\",\"B\"],4,3)==\"A\"\nassert knn([0,2],[\"B\",\"A\"],1,2)==\"A\"",
+      "hint": "先按距离排序索引，再统计邻居标签；平票按标签排序。",
+      "expected": "k 的变化能改变类别，平票规则也通过。"
+    }
+  },
+  {
+    "id": 24,
+    "title": "KMeans：分配后重算中心",
+    "group": "项目课程 · 传统ML",
+    "goal": "执行一维 KMeans 的一轮分配与更新",
+    "example": "点 [0,2,8,10]，初始中心 [0,10]；分为 [0,2] 与 [8,10] 后中心变成 [1,9]。",
+    "mechanism": "无监督聚类交替执行最近中心分配和均值更新；中心编号不是类别语义。",
+    "walk": [
+      {
+        "title": "比较距离",
+        "body": "2 离中心 0 为 2，离 10 为 8，所以入第一组。"
+      },
+      {
+        "title": "分别求均值",
+        "body": "(0+2)/2=1，(8+10)/2=9。"
+      },
+      {
+        "title": "再来一轮",
+        "body": "以 [1,9] 重分配，此例分组不变。"
+      },
+      {
+        "title": "空组处理",
+        "body": "若某中心没有点，保留旧中心；别对空列表求均值。"
+      }
+    ],
+    "question": "空组应按本练习约定如何处理？",
+    "options": [
+      "除以零",
+      "保留原中心",
+      "删除所有点"
+    ],
+    "answer": 1,
+    "feedback": "源实现同样保留空组原中心。",
+    "source": "algorithms/machinelearning/k_means.py",
+    "demo": "",
+    "code": {
+      "symbol": "k_means_clustering 分配更新",
+      "start": 56,
+      "end": 73,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 初始中心会影响最后结果。"
+        },
+        {
+          "line": 56,
+          "text": "    for _ in range(max_iterations):"
+        },
+        {
+          "line": 57,
+          "text": "        clusters = [[] for _ in range(k)]"
+        },
+        {
+          "line": 58,
+          "text": "        # for each point -> calculate distance of that point to the centroid"
+        },
+        {
+          "line": 59,
+          "text": "        for pt in points:"
+        },
+        {
+          "line": 60,
+          "text": "            dists = [euclid_distance(pt, c) for c in centroids]"
+        },
+        {
+          "line": 61,
+          "text": "            best_idx = np.argmin(dists)"
+        },
+        {
+          "line": 62,
+          "text": "            clusters[best_idx].append(pt)"
+        },
+        {
+          "line": 63,
+          "text": ""
+        },
+        {
+          "line": 64,
+          "text": "        # update"
+        },
+        {
+          "line": 65,
+          "text": "        new_centroids = []"
+        },
+        {
+          "line": 66,
+          "text": "        for i in range(k):"
+        },
+        {
+          "line": 67,
+          "text": "            members = clusters[i]"
+        },
+        {
+          "line": 68,
+          "text": "            if members:"
+        },
+        {
+          "line": 69,
+          "text": "                member_arr = np.array(members)"
+        },
+        {
+          "line": 70,
+          "text": "                mean = np.mean(member_arr, axis=0)"
+        },
+        {
+          "line": 71,
+          "text": "                new_centroids.append(np.round(mean, 4))"
+        },
+        {
+          "line": 72,
+          "text": "            else:  # if mean = 0"
+        },
+        {
+          "line": 73,
+          "text": "                new_centroids.append(centroids[i])"
+        }
+      ],
+      "notes": [
+        "初始中心会影响最后结果。",
+        "源码支持二维点并迭代；练习只做一维的一轮。",
+        "相同距离时练习选择索引最小的中心。"
+      ]
+    },
+    "lab": {
+      "goal": "执行一维 KMeans 的一轮分配与更新。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def kmeans_step(points, centers):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def kmeans_step(points, centers):\n    groups=[[] for _ in centers]\n    for p in points:\n        i=min(range(len(centers)),key=lambda i:abs(p-centers[i]))\n        groups[i].append(p)\n    return [sum(g)/len(g) if g else centers[i] for i,g in enumerate(groups)]\n",
+      "tests": "assert kmeans_step([0,2,8,10],[0,10])==[1,9]\nassert kmeans_step([1,2],[0,100])==[1.5,100]\nassert kmeans_step([],[3,9])==[3,9]",
+      "hint": "用 groups 收集点；为空时取原来的 centers[i]。",
+      "expected": "普通中心更新与空组保留均正确。"
+    }
+  },
+  {
+    "id": 25,
+    "title": "决策树：用熵衡量混杂",
+    "group": "项目课程 · 传统ML",
+    "goal": "计算标签集合的熵",
+    "example": "[0,0,1,1] 一半一半，熵为 1 bit；[1,1,1,1] 已纯，熵为 0。",
+    "mechanism": "熵为 -Σp log₂p。信息增益是父节点熵减去按样本数加权的子节点熵，而非只看一个子节点。",
+    "walk": [
+      {
+        "title": "先数比例",
+        "body": "两个 0、两个 1，各占 0.5。"
+      },
+      {
+        "title": "算信息量",
+        "body": "-0.5log₂0.5 两次相加为 1。"
+      },
+      {
+        "title": "比较纯节点",
+        "body": "p=1 时 log₂1=0，熵为 0。"
+      },
+      {
+        "title": "选择分裂",
+        "body": "若把混合节点分成两个纯节点，加权子熵为 0，增益为 1。"
+      }
+    ],
+    "question": "[0,0,1,1] 完美分成两个纯组，信息增益是？",
+    "options": [
+      "0",
+      "0.5",
+      "1"
+    ],
+    "answer": 2,
+    "feedback": "父熵 1 减加权子熵 0，得到 1。",
+    "source": "algorithms/machinelearning/decision_tree.py",
+    "demo": "",
+    "code": {
+      "symbol": "calc_entropy / calc_info_gain",
+      "start": 41,
+      "end": 58,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 源文件用 Counter 计数，练习用 set 和 count。"
+        },
+        {
+          "line": 41,
+          "text": "def calc_entropy(labels):"
+        },
+        {
+          "line": 42,
+          "text": "    counts = Counter(labels)"
+        },
+        {
+          "line": 43,
+          "text": "    total = sum(counts.values())"
+        },
+        {
+          "line": 44,
+          "text": "    entropy = 0.0"
+        },
+        {
+          "line": 45,
+          "text": "    for count in counts.values():"
+        },
+        {
+          "line": 46,
+          "text": "        p = count / total"
+        },
+        {
+          "line": 47,
+          "text": "        entropy -= p * math.log2(p)"
+        },
+        {
+          "line": 48,
+          "text": "    return entropy"
+        },
+        {
+          "line": 49,
+          "text": ""
+        },
+        {
+          "line": 50,
+          "text": "def calc_info_gain(examples, attr, target_attr):"
+        },
+        {
+          "line": 51,
+          "text": "    total_labels = [ex[target_attr] for ex in examples] # no no yes yes"
+        },
+        {
+          "line": 52,
+          "text": "    total_ent = calc_entropy(total_labels)"
+        },
+        {
+          "line": 53,
+          "text": "    n = len(examples)"
+        },
+        {
+          "line": 54,
+          "text": "    rem = 0.0"
+        },
+        {
+          "line": 55,
+          "text": "    for v in set(ex[attr] for ex in examples):"
+        },
+        {
+          "line": 56,
+          "text": "        subset_labels = [ex[target_attr] for ex in examples if ex[attr] == v]"
+        },
+        {
+          "line": 57,
+          "text": "        rem += (len(subset_labels) / n) * calc_entropy(subset_labels)"
+        },
+        {
+          "line": 58,
+          "text": "    return total_ent - rem"
+        }
+      ],
+      "notes": [
+        "源文件用 Counter 计数，练习用 set 和 count。",
+        "空标签约定熵为 0；不要计算 log₂0。",
+        "树的递归和停止条件在原文件后半段，本实验仅练评分基础。"
+      ]
+    },
+    "lab": {
+      "goal": "计算标签集合的熵。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def entropy(labels):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def entropy(labels):\n    import math\n    if not labels:\n        return 0.0\n    probs=[labels.count(v)/len(labels) for v in set(labels)]\n    return -sum(p*math.log2(p) for p in probs)\n",
+      "tests": "assert abs(entropy([0,0,1,1])-1)<1e-9\nassert entropy([1,1,1])==0\nassert entropy([])==0\nassert abs(entropy([0,1,2,3])-2)<1e-9",
+      "hint": "只遍历实际出现的类别，每类计算一次 p。",
+      "expected": "均匀二类为 1、纯类与空集为 0、均匀四类为 2。"
+    }
+  },
+  {
+    "id": 26,
+    "title": "朴素贝叶斯：给未出现留余地",
+    "group": "项目课程 · 传统ML",
+    "goal": "计算二元特征的拉普拉斯平滑概率",
+    "example": "某类 3 个样本里某词出现 0 次，加一平滑后 P(出现|类别)=(0+1)/(3+2)=0.2。",
+    "mechanism": "伯努利朴素贝叶斯在给定类别时假设特征条件独立，联合分数可把对数概率相加。出现和未出现都提供证据。",
+    "walk": [
+      {
+        "title": "先看零概率",
+        "body": "0/3=0，会把含该特征的乘积打成零。"
+      },
+      {
+        "title": "各状态加一",
+        "body": "二元特征的出现与不出现各加一个伪计数。"
+      },
+      {
+        "title": "得到新分母",
+        "body": "3+2=5，出现概率 1/5，不出现 4/5。"
+      },
+      {
+        "title": "回看源码",
+        "body": "prob_1 与 prob_0 分别存 log(p)、log(1-p)，预测按样本取对应项。"
+      }
+    ],
+    "question": "3 次全出现，加一后出现概率？",
+    "options": [
+      "1",
+      "0.8",
+      "0.5"
+    ],
+    "answer": 1,
+    "feedback": "(3+1)/(3+2)=0.8。",
+    "source": "algorithms/machinelearning/naivebayes.py",
+    "demo": "",
+    "code": {
+      "symbol": "_fit_bernouli / _compute_bayesion",
+      "start": 27,
+      "end": 42,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 这里是二元特征模型，分母增加 2*alpha。"
+        },
+        {
+          "line": 27,
+          "text": "    def _fit_bernouli(self, X, y):"
+        },
+        {
+          "line": 28,
+          "text": "        self.likelihoods = {}"
+        },
+        {
+          "line": 29,
+          "text": "        for cls in self.classes:"
+        },
+        {
+          "line": 30,
+          "text": "            X_cls = X[y==cls]"
+        },
+        {
+          "line": 31,
+          "text": "            prob = (np.sum(X_cls, axis=0) + self.smoothing) / (X_cls.shape[0] + 2 * self.smoothing)"
+        },
+        {
+          "line": 32,
+          "text": "            self.likelihoods[cls] = np.log(prob), np.log(1-prob)"
+        },
+        {
+          "line": 33,
+          "text": ""
+        },
+        {
+          "line": 34,
+          "text": "    def _compute_bayesion(self, sample):"
+        },
+        {
+          "line": 35,
+          "text": "        bayesion_prob = {}"
+        },
+        {
+          "line": 36,
+          "text": "        for cls in self.classes:"
+        },
+        {
+          "line": 37,
+          "text": "            probability = self.priors[cls]"
+        },
+        {
+          "line": 38,
+          "text": "            prob_1, prob_0 = self.likelihoods[cls]"
+        },
+        {
+          "line": 39,
+          "text": "            likelihood = np.sum(sample * prob_1 + (1 - sample) * prob_0)"
+        },
+        {
+          "line": 40,
+          "text": "            probability += likelihood "
+        },
+        {
+          "line": 41,
+          "text": "            bayesion_prob[cls] = probability"
+        },
+        {
+          "line": 42,
+          "text": "        return max(bayesion_prob, key=bayesion_prob.get)"
+        }
+      ],
+      "notes": [
+        "这里是二元特征模型，分母增加 2*alpha。",
+        "不要把该公式原样用于任意词频模型。",
+        "实验仅算平滑条件概率，不声称训练完整分类器。"
+      ]
+    },
+    "lab": {
+      "goal": "计算二元特征的拉普拉斯平滑概率。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def smooth_probability(present, total, alpha=1.0):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def smooth_probability(present, total, alpha=1.0):\n    if alpha<=0 or not 0<=present<=total:\n        raise ValueError(\"invalid counts\")\n    return (present+alpha)/(total+2*alpha)\n",
+      "tests": "assert smooth_probability(0,3)==0.2\nassert smooth_probability(3,3)==0.8\nassert smooth_probability(0,0)==0.5\nassert smooth_probability(1,4,2)==0.375",
+      "hint": "分母包括二元两种状态的平滑计数。",
+      "expected": "未出现、全出现、无样本和不同平滑强度通过。"
+    }
+  },
+  {
+    "id": 27,
+    "title": "SVM：正确还要留间隔",
+    "group": "项目课程 · 传统ML",
+    "goal": "实现单样本 hinge loss",
+    "example": "标签 y=1、分数 s=0.2：分类正确但间隔不足，损失 max(0,1-0.2)=0.8；s=2 时损失 0。",
+    "mechanism": "带符号间隔 y*s 衡量是否在正确侧并离边界足够远。此处标签为 -1/+1。原仓库 svm.py 只有题目描述，没有训练实现。",
+    "walk": [
+      {
+        "title": "看方向",
+        "body": "y=1、s=-2 时 y*s=-2，在错误一侧。"
+      },
+      {
+        "title": "看间隔",
+        "body": "y=1、s=0.2 虽正确但没达到 1。"
+      },
+      {
+        "title": "算损失",
+        "body": "max(0,1-y*s)：上述两例为 3 与 0.8。"
+      },
+      {
+        "title": "认清范围",
+        "body": "这只是理解软间隔的配套实验，不是源码里已完成的 Pegasos 或核 SVM。"
+      }
+    ],
+    "question": "y=-1、s=-2 的 hinge loss 是？",
+    "options": [
+      "3",
+      "1",
+      "0"
+    ],
+    "answer": 2,
+    "feedback": "y*s=2，max(0,1-2)=0。",
+    "source": "algorithms/machinelearning/svm.py",
+    "demo": "",
+    "code": {
+      "symbol": "题目占位（无实现）",
+      "start": 1,
+      "end": 6,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 源文件仅有题目文本，不能当作可运行 SVM。"
+        },
+        {
+          "line": 1,
+          "text": "# https://www.deep-ml.com/problems/21"
+        },
+        {
+          "line": 2,
+          "text": ""
+        },
+        {
+          "line": 3,
+          "text": ""
+        },
+        {
+          "line": 4,
+          "text": "'''"
+        },
+        {
+          "line": 5,
+          "text": "Write a Python function that implements a deterministic version of the Pegasos algorithm to train a kernel SVM classifier from scratch. The function should take a dataset (as a 2D NumPy array where each row represents a data sample and each column represents a feature), a label vector (1D NumPy array where each entry corresponds to the label of the sample), and training parameters such as the choice of kernel (linear or RBF), regularization parameter (lambda), and the number of iterations. Note that while the original Pegasos algorithm is stochastic (it selects a single random sample at each step), this problem requires using all samples in every iteration (i.e., no random sampling). The function should perform binary classification and return the model's alpha coefficients and bias."
+        },
+        {
+          "line": 6,
+          "text": "'''"
+        }
+      ],
+      "notes": [
+        "源文件仅有题目文本，不能当作可运行 SVM。",
+        "此处展示完整 6 行占位文件，以保留来源事实。",
+        "实验实现 hinge loss，不训练权重或核函数。"
+      ]
+    },
+    "lab": {
+      "goal": "实现单样本 hinge loss。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def hinge(label, score):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def hinge(label, score):\n    if label not in (-1,1):\n        raise ValueError(\"labels must be -1 or 1\")\n    return max(0.0,1-label*score)\n",
+      "tests": "assert abs(hinge(1,0.2)-0.8)<1e-9\nassert hinge(-1,-2)==0\nassert hinge(1,-2)==3\nassert hinge(1,1)==0",
+      "hint": "先算 label*score，再从 1 减去并截到非负。",
+      "expected": "方向错误、间隔不足、间隔边界与足够间隔均正确。"
+    }
+  },
+  {
+    "id": 28,
+    "title": "缩放：训练集决定尺子",
+    "group": "项目课程 · 传统ML",
+    "goal": "用给定训练集范围做 min-max 缩放",
+    "example": "训练值 [10,20,30] 确定最小 10、最大 30；20→0.5，测试值 40→1.5。",
+    "mechanism": "缩放参数必须只从训练集拟合，再应用于测试集。测试数据超出训练范围时，结果可以超出 [0,1]。",
+    "walk": [
+      {
+        "title": "先确定尺子",
+        "body": "训练跨度为 30-10=20。"
+      },
+      {
+        "title": "转换中间值",
+        "body": "(20-10)/20=0.5。"
+      },
+      {
+        "title": "处理新样本",
+        "body": "40 用同一把尺子得 1.5，不重算最大值。"
+      },
+      {
+        "title": "常量列",
+        "body": "最大等于最小时分母为零；练习约定输出 0。"
+      }
+    ],
+    "question": "测试值超出训练最大值时应？",
+    "options": [
+      "重算测试集范围",
+      "沿用训练范围",
+      "删除测试样本"
+    ],
+    "answer": 1,
+    "feedback": "沿用训练集的尺子，避免泄漏，也保持特征含义一致。",
+    "source": "algorithms/machinelearning/feature_scaling.py",
+    "demo": "",
+    "code": {
+      "symbol": "feature_scaling",
+      "start": 26,
+      "end": 31,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 源函数直接对输入拟合与变换，没有单独持久化参数。"
+        },
+        {
+          "line": 26,
+          "text": "def feature_scaling(data: np.ndarray) -> (np.ndarray, np.ndarray):"
+        },
+        {
+          "line": 27,
+          "text": "    standardized_data = np.round((data - data.mean(axis=0)) / data.std(axis=0), 4)"
+        },
+        {
+          "line": 28,
+          "text": "    normalized_data = np.round("
+        },
+        {
+          "line": 29,
+          "text": "        (data - data.min(axis=0)) / (data.max(axis=0) - data.min(axis=0)), 4"
+        },
+        {
+          "line": 30,
+          "text": "    )"
+        },
+        {
+          "line": 31,
+          "text": "    return standardized_data, normalized_data"
+        }
+      ],
+      "notes": [
+        "源函数直接对输入拟合与变换，没有单独持久化参数。",
+        "原函数未保护常量列；练习明确补上处理约定。",
+        "标准化与 min-max 不同；本实验只实现后者。"
+      ]
+    },
+    "lab": {
+      "goal": "用给定训练集范围做 min-max 缩放。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def minmax(values, train_min, train_max):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def minmax(values, train_min, train_max):\n    if train_max==train_min:\n        return [0.0 for _ in values]\n    return [(v-train_min)/(train_max-train_min) for v in values]\n",
+      "tests": "assert minmax([10,20,30],10,30)==[0,0.5,1]\nassert minmax([40],10,30)==[1.5]\nassert minmax([5,5],5,5)==[0,0]\nassert minmax([],0,1)==[]",
+      "hint": "不要从 values 重算 min/max；它们已经通过参数传入。",
+      "expected": "训练范围内、范围外、常量列与空输入全部正确。"
+    }
+  },
+  {
+    "id": 29,
+    "title": "评估：先数混淆矩阵",
+    "group": "项目课程 · 传统ML",
+    "goal": "按真实与预测标签统计 TN、FP、FN、TP",
+    "example": "四对 (预测,真实) 为 (0,0),(1,0),(0,1),(1,1)，每个格子各 1。",
+    "mechanism": "准确率看整体，precision=TP/(TP+FP) 看报出的正类有多准，recall=TP/(TP+FN) 看实际正类找回多少。",
+    "walk": [
+      {
+        "title": "先找误报",
+        "body": "真实 0 却预测 1，是 FP。"
+      },
+      {
+        "title": "再找漏报",
+        "body": "真实 1 却预测 0，是 FN。"
+      },
+      {
+        "title": "画二维表",
+        "body": "按真实类别排两行、预测类别排两列，得到 [[TN,FP],[FN,TP]]。"
+      },
+      {
+        "title": "选择指标",
+        "body": "100 个样本只有 1 个正类，全预测负类仍有 99% 准确率，但召回率为 0。"
+      }
+    ],
+    "question": "实际为 1、预测为 0 属于？",
+    "options": [
+      "FP",
+      "FN",
+      "TP"
+    ],
+    "answer": 1,
+    "feedback": "实际正类被漏掉，因此是假阴性 FN。",
+    "source": "algorithms/machinelearning/confusion_matrix.py",
+    "demo": "",
+    "code": {
+      "symbol": "confusion_matrix",
+      "start": 2,
+      "end": 21,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 本仓库输入顺序是 (y_pred,y_true)，不是反过来。"
+        },
+        {
+          "line": 2,
+          "text": "def confusion_matrix(data):"
+        },
+        {
+          "line": 3,
+          "text": "    \"\"\""
+        },
+        {
+          "line": 4,
+          "text": "    Generate confusion matrix for binary classification."
+        },
+        {
+          "line": 5,
+          "text": ""
+        },
+        {
+          "line": 6,
+          "text": "    data contains (y_pred, y_true)"
+        },
+        {
+          "line": 7,
+          "text": "    Returns [[TN, FP], [FN, TP]]"
+        },
+        {
+          "line": 8,
+          "text": "    \"\"\""
+        },
+        {
+          "line": 9,
+          "text": "    TN = FP = FN = TP = 0"
+        },
+        {
+          "line": 10,
+          "text": ""
+        },
+        {
+          "line": 11,
+          "text": "    for y_pred, y_true in data:"
+        },
+        {
+          "line": 12,
+          "text": "        if y_true == 1 and y_pred == 1:"
+        },
+        {
+          "line": 13,
+          "text": "            TP += 1"
+        },
+        {
+          "line": 14,
+          "text": "        elif y_true == 0 and y_pred == 1:"
+        },
+        {
+          "line": 15,
+          "text": "            FP += 1"
+        },
+        {
+          "line": 16,
+          "text": "        elif y_true == 1 and y_pred == 0:"
+        },
+        {
+          "line": 17,
+          "text": "            FN += 1"
+        },
+        {
+          "line": 18,
+          "text": "        elif y_true == 0 and y_pred == 0:"
+        },
+        {
+          "line": 19,
+          "text": "            TN += 1"
+        },
+        {
+          "line": 20,
+          "text": ""
+        },
+        {
+          "line": 21,
+          "text": "    return [[TN, FP], [FN, TP]]"
+        }
+      ],
+      "notes": [
+        "本仓库输入顺序是 (y_pred,y_true)，不是反过来。",
+        "读指标前明确正类定义。",
+        "实验先建立计数基础；小分母及零分母指标需另定约定。"
+      ]
+    },
+    "lab": {
+      "goal": "按真实与预测标签统计 TN、FP、FN、TP。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def confusion(pairs):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def confusion(pairs):\n    result=[[0,0],[0,0]]\n    for pred,true in pairs:\n        result[true][pred]+=1\n    return result\n",
+      "tests": "assert confusion([(0,0),(1,0),(0,1),(1,1)])==[[1,1],[1,1]]\nassert confusion([(0,1),(0,1),(1,1)])==[[0,0],[2,1]]\nassert confusion([])==[[0,0],[0,0]]",
+      "hint": "第一维索引真实值，第二维预测值。",
+      "expected": "四格计数、非对称漏报情况与空集通过。"
+    }
+  },
+  {
+    "id": 30,
+    "title": "训练与测试：把答案留到最后",
+    "group": "项目课程 · 传统ML",
+    "goal": "按指定测试索引拆分样本和标签",
+    "example": "样本 [10,20,30,40]、标签 [0,0,1,1]，测试索引 [1,3] 留出 20、40，训练保留 10、30。",
+    "mechanism": "划分必须保持样本与标签配对；训练集用来拟合，验证集选方案，最终测试集只评价。源 KNN 示例使用分层随机拆分。",
+    "walk": [
+      {
+        "title": "先选留出索引",
+        "body": "索引 1、3 对应第二与第四条记录。"
+      },
+      {
+        "title": "保持配对",
+        "body": "测试样本 [20,40] 的标签必须是 [0,1]。"
+      },
+      {
+        "title": "检查不重叠",
+        "body": "每条记录只进入一个集合，合起来覆盖原数据。"
+      },
+      {
+        "title": "选择策略",
+        "body": "原示例 random_state=42 可复现、stratify=y 保持类别比例；时间序列通常按时间留出。"
+      }
+    ],
+    "question": "缩放均值应该从哪里计算？",
+    "options": [
+      "全部数据",
+      "测试集",
+      "训练集"
+    ],
+    "answer": 2,
+    "feedback": "预处理同样会学习数据分布，只能拟合训练集。",
+    "source": "algorithms/machinelearning/knn.py",
+    "demo": "",
+    "code": {
+      "symbol": "train_test_split 调用",
+      "start": 52,
+      "end": 61,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 这里按索引显式拆分，不模拟 sklearn 的随机算法。"
+        },
+        {
+          "line": 52,
+          "text": "print(f\"X shape: {X.shape}, y shape: {y.shape}\")"
+        },
+        {
+          "line": 53,
+          "text": "print(f\"Feature names: {feature_names}\")"
+        },
+        {
+          "line": 54,
+          "text": "print(f\"Target names: {target_names}\")"
+        },
+        {
+          "line": 55,
+          "text": "print(\"\\nSample data:\")"
+        },
+        {
+          "line": 56,
+          "text": "print(X[:5])"
+        },
+        {
+          "line": 57,
+          "text": "print(y[:5])"
+        },
+        {
+          "line": 58,
+          "text": ""
+        },
+        {
+          "line": 59,
+          "text": "X_train, X_test, y_train, y_test = train_test_split("
+        },
+        {
+          "line": 60,
+          "text": "    X, y, test_size=0.3, random_state=42, stratify=y"
+        },
+        {
+          "line": 61,
+          "text": ")"
+        }
+      ],
+      "notes": [
+        "这里按索引显式拆分，不模拟 sklearn 的随机算法。",
+        "不得把 divide_dataset.py 的阈值分组误称训练测试划分。",
+        "先拆分，再拟合缩放与模型。"
+      ]
+    },
+    "lab": {
+      "goal": "按指定测试索引拆分样本和标签。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def split_data(x, y, test_indices):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def split_data(x, y, test_indices):\n    selected=set(test_indices)\n    train=[i for i in range(len(x)) if i not in selected]\n    test=[i for i in range(len(x)) if i in selected]\n    return ([x[i] for i in train],[x[i] for i in test],[y[i] for i in train],[y[i] for i in test])\n",
+      "tests": "assert split_data([10,20,30,40],[0,0,1,1],[1,3])==([10,30],[20,40],[0,1],[0,1])\nassert split_data([5],[9],[])==([5],[],[9],[])\nassert split_data([5],[9],[0])==([],[5],[],[9])",
+      "hint": "按同一索引选择 x 和 y，返回 X_train,X_test,y_train,y_test。",
+      "expected": "普通拆分、无测试项和全部留出均保持配对。"
+    }
+  },
+  {
+    "id": 31,
+    "title": "正则化：拟合误差之外的代价",
+    "group": "项目课程 · 传统ML",
+    "goal": "计算均方误差加 L2 权重惩罚",
+    "example": "预测 [1,3]、真实 [2,2] 的 MSE=1；权重 [2,-1] 平方和 5，alpha=0.1，总损失 1.5。",
+    "mechanism": "L2 惩罚让大权重付出额外代价。更强正则化可能减少过拟合，也可能导致欠拟合，应在验证集选择强度。",
+    "walk": [
+      {
+        "title": "先算误差",
+        "body": "(-1)²+1²=2，除以 2 得 1。"
+      },
+      {
+        "title": "再算惩罚",
+        "body": "2²+(-1)²=5，乘 0.1 得 0.5。"
+      },
+      {
+        "title": "合并目标",
+        "body": "1+0.5=1.5；模型不再只追求训练误差最小。"
+      },
+      {
+        "title": "核对约定",
+        "body": "源文件对传入 w 的每项都惩罚；若偏置包含其中也会被惩罚，这与部分库默认值不同。"
+      }
+    ],
+    "question": "alpha=0 时该损失等于？",
+    "options": [
+      "MSE",
+      "权重平方和",
+      "0"
+    ],
+    "answer": 0,
+    "feedback": "关闭惩罚项后只剩拟合误差。",
+    "source": "algorithms/machinelearning/ridge_regression.py",
+    "demo": "",
+    "code": {
+      "symbol": "ridge_loss",
+      "start": 4,
+      "end": 9,
+      "lines": [
+        {
+          "line": null,
+          "text": "# 原函数先用 X@w 预测；练习直接传预测，专注损失组合。"
+        },
+        {
+          "line": 4,
+          "text": "def ridge_loss(X: np.ndarray, w: np.ndarray, y_true: np.ndarray, alpha: float) -> float:"
+        },
+        {
+          "line": 5,
+          "text": "    y_pred = X @ w "
+        },
+        {
+          "line": 6,
+          "text": "    mse = np.mean((y_true - y_pred) ** 2)"
+        },
+        {
+          "line": 7,
+          "text": "    penalty_sum = alpha * np.sum(w**2)"
+        },
+        {
+          "line": 8,
+          "text": "    ridge_loss = mse + penalty_sum"
+        },
+        {
+          "line": 9,
+          "text": "    return ridge_loss"
+        }
+      ],
+      "notes": [
+        "原函数先用 X@w 预测；练习直接传预测，专注损失组合。",
+        "惩罚平方和不是绝对值和，后者属于 L1。",
+        "不能根据训练损失更低就宣布泛化更好。"
+      ]
+    },
+    "lab": {
+      "goal": "计算均方误差加 L2 权重惩罚。此处只练核心步骤；原仓库依赖不在浏览器运行。",
+      "starter": "def ridge_loss(predictions, targets, weights, alpha):\n    # TODO：替换占位返回值\n    return 0\n",
+      "solution": "def ridge_loss(predictions, targets, weights, alpha):\n    mse=sum((p-t)**2 for p,t in zip(predictions,targets))/len(targets)\n    return mse+alpha*sum(w*w for w in weights)\n",
+      "tests": "assert ridge_loss([1,3],[2,2],[2,-1],0.1)==1.5\nassert ridge_loss([1,3],[2,2],[2,-1],0)==1\nassert ridge_loss([2],[2],[0],10)==0\nassert ridge_loss([2],[2],[-2],0.5)==2",
+      "hint": "先平均平方误差，再加 alpha 乘权重平方和。",
+      "expected": "拟合误差、零正则、零权重与负权重惩罚通过。"
+    }
+  }
+]

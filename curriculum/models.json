@@ -1,0 +1,1860 @@
+[
+  {
+    "id": 32,
+    "title": "一个神经元怎样知道该改哪一个权重",
+    "group": "项目课程 · 神经网络",
+    "goal": "算出 sigmoid + MSE 的单样本权重和偏置梯度。",
+    "example": "x=2、w=0、b=0、y=1：预测为0.5，误差平方0.25，权重梯度为−0.5。",
+    "mechanism": "先计算预测与目标之差，再乘 sigmoid 的局部导数，最后乘输入；这就是链式法则在反向传播中的具体用途。",
+    "walk": [
+      {
+        "title": "先猜一个概率",
+        "body": "0×2+0=0，sigmoid(0)=0.5；目标1意味着预测偏低。"
+      },
+      {
+        "title": "沿着三段关系回传",
+        "body": "损失对预测的导数是2(0.5−1)=−1，sigmoid 导数0.25，输入因子2；乘起来−0.5。"
+      },
+      {
+        "title": "走一小步",
+        "body": "学习率0.1时，w从0变成0.05，b从0变成0.025；新的预测向1移动。"
+      },
+      {
+        "title": "核对多样本平均",
+        "body": "对每个样本求梯度再平均。源码偏置分支同时用了2/n和mean，额外除了一次n；本练习先隔离单样本规则。"
+      }
+    ],
+    "question": "这次权重梯度为什么是负数？",
+    "options": [
+      "需要减小预测",
+      "增大权重会减小当前损失",
+      "梯度总是负的"
+    ],
+    "answer": 1,
+    "feedback": "输入为正且目标高于预测；沿负梯度更新会增大权重。",
+    "source": "algorithms/deeplearning/single_neuron_with_backprop.py",
+    "demo": "",
+    "code": {
+      "symbol": "# backward pass",
+      "start": 28,
+      "end": 41,
+      "lines": [
+        {
+          "line": 28,
+          "text": "        # backward pass"
+        },
+        {
+          "line": 29,
+          "text": "        error = predictions - labels # expected - actual"
+        },
+        {
+          "line": 30,
+          "text": "        sigmoid_derivative = predictions * (1 - predictions)"
+        },
+        {
+          "line": 31,
+          "text": "        delta = error * sigmoid_derivative"
+        },
+        {
+          "line": 32,
+          "text": "        partial_derivative_error_wrt_weights = (2 / len(labels)) * np.dot(features.T, delta) "
+        },
+        {
+          "line": 33,
+          "text": "        partial_derivative_error_wrt_bias = (2 / len(labels)) * np.mean(delta)"
+        },
+        {
+          "line": 34,
+          "text": ""
+        },
+        {
+          "line": 35,
+          "text": "        # can do direct"
+        },
+        {
+          "line": 36,
+          "text": "        # weight_gradients = (2/len(labels)) * np.dot(features.T, errors * predictions * (1 - predictions))"
+        },
+        {
+          "line": 37,
+          "text": "        # bias_gradient = (2/len(labels)) * np.sum(errors * predictions * (1 - predictions))"
+        },
+        {
+          "line": 38,
+          "text": ""
+        },
+        {
+          "line": 39,
+          "text": "        # update"
+        },
+        {
+          "line": 40,
+          "text": "        weights -= learning_rate * partial_derivative_error_wrt_weights"
+        },
+        {
+          "line": 41,
+          "text": "        bias -=  learning_rate * partial_derivative_error_wrt_bias"
+        }
+      ],
+      "notes": [
+        "源码 error 注释写 expected−actual，但表达式实际是 predictions−labels。",
+        "偏置梯度在批量分支有多除一次样本数的问题，不把上游测试通过等同于数学正确。",
+        "练习返回未四舍五入梯度，以免小数掩盖误差。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：算出 sigmoid + MSE 的单样本权重和偏置梯度。",
+      "starter": "def gradients(x, w, b, y):\n    # TODO: 补齐本课的教学计算\n    return (0, 0)\n",
+      "solution": "def gradients(x, w, b, y):\n    import math\n    p = 1 / (1 + math.exp(-(w*x+b)))\n    delta = 2*(p-y)*p*(1-p)\n    return delta*x, delta\n",
+      "tests": "assert gradients(2,0,0,1) == (-0.5,-0.25)\nassert gradients(3,0,0,0) == (0.75,0.25)\nimport math\ndef loss(w,b):\n    probability=1/(1+math.exp(-(w*2+b)))\n    return (probability-1)**2\nh=1e-5\ngw,gb=gradients(2,0.4,-0.1,1)\nassert abs(gw-(loss(0.4+h,-0.1)-loss(0.4-h,-0.1))/(2*h))<1e-7\nassert abs(gb-(loss(0.4,-0.1+h)-loss(0.4,-0.1-h))/(2*h))<1e-7\n",
+      "hint": "先算p，再算delta；偏置没有输入x因子。",
+      "expected": "两个用例得到(-0.5,-0.25)与(0.75,0.25)。另外用非零参数，与有限差分算出的变化率交叉检查。"
+    }
+  },
+  {
+    "id": 33,
+    "title": "记住梯度：Momentum 到 Adam",
+    "group": "项目课程 · 神经网络",
+    "goal": "实现从零状态出发的 Adam 第一步。",
+    "example": "梯度2时，一阶矩m=0.2、二阶矩v=0.004；偏差修正后分别为2和4。",
+    "mechanism": "Momentum 平滑梯度方向；Adam 还平滑梯度平方，并用其平方根缩放更新。v是二阶原点矩，不直接等于方差。",
+    "walk": [
+      {
+        "title": "算移动平均",
+        "body": "β1=0.9：m=0.9×0+0.1×2=0.2；β2=0.999：v=0.001×4=0.004。"
+      },
+      {
+        "title": "补偿初始零值",
+        "body": "第一步除以1−β1和1−β2，恢复m̂=2、v̂=4。"
+      },
+      {
+        "title": "算参数更新",
+        "body": "θ=1、学习率0.1，忽略极小epsilon，更新幅度约0.1，θ约0.9。"
+      },
+      {
+        "title": "试一次负梯度",
+        "body": "把梯度改为−2，参数约增至1.1；实际多步必须把m和v传入下一步，不能重置。"
+      }
+    ],
+    "question": "Adam 中保存 v 的目的是什么？",
+    "options": [
+      "保存标签",
+      "记录梯度平方的移动平均以缩放步长",
+      "代替损失函数"
+    ],
+    "answer": 1,
+    "feedback": "方向来自一阶矩，尺度来自二阶矩；两者都跨步保留。",
+    "source": "algorithms/deeplearning/adam_algo.py",
+    "demo": "",
+    "code": {
+      "symbol": "def adam_optimizer",
+      "start": 4,
+      "end": 15,
+      "lines": [
+        {
+          "line": 4,
+          "text": "def adam_optimizer(f, grad, x0, learning_rate=0.001, beta1=0.9, beta2=0.999, epsilon=1e-8, num_iterations=10):"
+        },
+        {
+          "line": 5,
+          "text": "    x = x0"
+        },
+        {
+          "line": 6,
+          "text": "    m, v= np.zeros_like(x), np.zeros_like(x)"
+        },
+        {
+          "line": 7,
+          "text": ""
+        },
+        {
+          "line": 8,
+          "text": "    for t in range(1, num_iterations + 1):"
+        },
+        {
+          "line": 9,
+          "text": "        g = grad(x)"
+        },
+        {
+          "line": 10,
+          "text": "        m = beta1 * m + (1 - beta1) * g"
+        },
+        {
+          "line": 11,
+          "text": "        v = beta2 * v + (1 - beta2) * g**2"
+        },
+        {
+          "line": 12,
+          "text": "        m_hat = m/(1 - beta1**t)"
+        },
+        {
+          "line": 13,
+          "text": "        v_hat = v/(1 - beta2**t)"
+        },
+        {
+          "line": 14,
+          "text": "        x = x - learning_rate * m_hat / (np.sqrt(v_hat) + epsilon)"
+        },
+        {
+          "line": 15,
+          "text": "    return x"
+        }
+      ],
+      "notes": [
+        "这里选 adam_algo.py，另一个 adam.py 存在混用缩进的静态风险。",
+        "源码 f 参数没有被使用，实际更新只调用 grad。",
+        "Adam 不是保证比 SGD 更准确的算法；比较时要控制学习率和预算。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：实现从零状态出发的 Adam 第一步。",
+      "starter": "def adam_first(parameter, gradient, rate):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def adam_first(parameter, gradient, rate):\n    m = 0.1*gradient\n    v = 0.001*gradient**2\n    return parameter-rate*(m/0.1)/((v/0.001)**0.5+1e-8)\n",
+      "tests": "assert abs(adam_first(1,2,0.1)-0.9)<1e-8\nassert abs(adam_first(1,-2,0.1)-1.1)<1e-8",
+      "hint": "先修正m和v，再在分母加epsilon。",
+      "expected": "正梯度约0.9；负梯度约1.1。"
+    }
+  },
+  {
+    "id": 34,
+    "title": "归一化与 Dropout：数值稳定和随机屏蔽",
+    "group": "项目课程 · 神经网络",
+    "goal": "用一组特征计算 LayerNorm，再解释 Dropout 的保留缩放。",
+    "example": "[2,4]均值3、方差1，归一化得到约[−1,1]；p=0.5时保留下来的激活乘2。",
+    "mechanism": "LayerNorm 对同一个样本的特征归一化；Dropout 在训练期间随机屏蔽且除以保留概率，二者解决不同问题。",
+    "walk": [
+      {
+        "title": "把尺度移到中心",
+        "body": "[2,4]减3得到[−1,1]，平方平均为1。"
+      },
+      {
+        "title": "除以稳定的分母",
+        "body": "分母sqrt(1+epsilon)；全相同的[5,5]也不会除零，输出[0,0]。"
+      },
+      {
+        "title": "再看随机屏蔽",
+        "body": "激活4以一半概率变0，一半概率变8，期望仍为4；不是每批恰好一半为0。"
+      },
+      {
+        "title": "区分训练与评估",
+        "body": "LayerNorm在train/eval使用同类统计；Dropout评估时关闭。源码dropout.py的伪实现random.rand不是标准库API。"
+      }
+    ],
+    "question": "Dropout(p=0.5)中保留的4通常变成多少？",
+    "options": [
+      "2",
+      "4",
+      "8"
+    ],
+    "answer": 2,
+    "feedback": "训练阶段使用反向Dropout缩放：4/(1−0.5)=8。",
+    "source": "pytorch/math_you_need_for_dl_code/normalisation/layernorm.py",
+    "demo": "",
+    "code": {
+      "symbol": "def main():",
+      "start": 13,
+      "end": 28,
+      "lines": [
+        {
+          "line": 13,
+          "text": "def main():"
+        },
+        {
+          "line": 14,
+          "text": "    x = torch.tensor(["
+        },
+        {
+          "line": 15,
+          "text": "        [[1., 2., 3.],"
+        },
+        {
+          "line": 16,
+          "text": "         [4., 5., 6.]],"
+        },
+        {
+          "line": 17,
+          "text": "        "
+        },
+        {
+          "line": 18,
+          "text": "        [[7., 8., 9.],"
+        },
+        {
+          "line": 19,
+          "text": "         [10., 11., 12.]]"
+        },
+        {
+          "line": 20,
+          "text": "    ])  # shape: (2, 2, 3)  -> (Batch, W/row, H/col)-> 2 matrices (batch size = 2, but it (LayerNorm) doesnt rely on this), both have 2 rows 3 columns"
+        },
+        {
+          "line": 21,
+          "text": "    # layer normalization is applied to each input sequence individually. There are two major reasons for doing this. First, batch normalization is tricky to apply to sequence models (like transformers) where each input sequence can be a different length,"
+        },
+        {
+          "line": 22,
+          "text": "    # layer norm will apply over both matrices for every row (token vector) (same happens in transformers)"
+        },
+        {
+          "line": 23,
+          "text": "    layernorm = torch.nn.LayerNorm(normalized_shape=3) # features = 3"
+        },
+        {
+          "line": 24,
+          "text": "    y = layernorm(x)"
+        },
+        {
+          "line": 25,
+          "text": ""
+        },
+        {
+          "line": 26,
+          "text": "    print(\"Input shape:\", x.shape)"
+        },
+        {
+          "line": 27,
+          "text": "    print(\"Output shape:\", y.shape) # shape is same as input, no batch interaction"
+        },
+        {
+          "line": 28,
+          "text": "    print(\"Output:\\n\", y)"
+        }
+      ],
+      "notes": [
+        "本练习省略可学习gamma/beta，保留epsilon。",
+        "LayerNorm特征维与BatchNorm批量统计维不可互换。",
+        "不要照抄dropout.py底部的random.rand；这里只验证数学。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：用一组特征计算 LayerNorm，再解释 Dropout 的保留缩放。",
+      "starter": "def normalize(values, eps=1e-5):\n    # TODO: 补齐本课的教学计算\n    return [0 for _ in values]\n",
+      "solution": "def normalize(values, eps=1e-5):\n    mean = sum(values)/len(values)\n    var = sum((x-mean)**2 for x in values)/len(values)\n    return [(x-mean)/(var+eps)**0.5 for x in values]\n",
+      "tests": "out=normalize([2,4])\nassert len(out)==2, \"必须为每个输入返回一个结果\"\nassert all(abs(a-b)<1e-5 for a,b in zip(out,[-1,1]))\nassert normalize([5,5]) == [0,0]\nthird=normalize([1,2,3])\nassert len(third)==3 and abs(sum(third))<1e-8 and third[0]<0<third[2]",
+      "hint": "方差用总体平均，不除以n−1。",
+      "expected": "[2,4]约为[-1,1]；常量输入得到零。"
+    }
+  },
+  {
+    "id": 35,
+    "title": "训练循环：清梯度、更新、统计要各司其职",
+    "group": "项目课程 · 神经网络",
+    "goal": "按每轮样本量计算独立的平均损失。",
+    "example": "第一轮两个批次：(损失2,样本2)、(损失8,样本1)，样本平均损失是4，不是5。",
+    "mechanism": "模型梯度与日志累计是两套状态；每步清梯度，每轮重置统计，最后按实际样本量归一化。",
+    "walk": [
+      {
+        "title": "记录每批的含义",
+        "body": "batch loss通常已经是本批平均值，2代表两个样本的平均。"
+      },
+      {
+        "title": "还原损失总量",
+        "body": "2×2+8×1=12，共3个样本，因此得到4。"
+      },
+      {
+        "title": "开启新一轮",
+        "body": "下一轮只有(1,2)时结果应是1；不能把上一轮的4累加进去。"
+      },
+      {
+        "title": "读真实循环",
+        "body": "源码zero_grad/backward/step顺序可读，但epoch_loss初始化在epoch循环外，日志有跨轮残留；本练习改算独立统计。"
+      }
+    ],
+    "question": "最后一个批次更小时应该怎样算全轮平均？",
+    "options": [
+      "平均所有批次均值",
+      "按每批样本数加权",
+      "把末批丢掉"
+    ],
+    "answer": 1,
+    "feedback": "批大小不相等时，批次均值的简单平均会改变每个样本权重。",
+    "source": "pytorch/math_you_need_for_dl_code/training_loop.py",
+    "demo": "",
+    "code": {
+      "symbol": "epoch_loss = 0.0",
+      "start": 27,
+      "end": 40,
+      "lines": [
+        {
+          "line": 27,
+          "text": "epoch_loss = 0.0"
+        },
+        {
+          "line": 28,
+          "text": "for epoch in range(10):"
+        },
+        {
+          "line": 29,
+          "text": "    model.train()"
+        },
+        {
+          "line": 30,
+          "text": "    for inp_x, target_y in dataloader:"
+        },
+        {
+          "line": 31,
+          "text": "        prediction = model(inp_x)"
+        },
+        {
+          "line": 32,
+          "text": "        loss = loss_fn(prediction, target_y)"
+        },
+        {
+          "line": 33,
+          "text": "        epoch_loss += loss.item()"
+        },
+        {
+          "line": 34,
+          "text": "        opt.zero_grad()"
+        },
+        {
+          "line": 35,
+          "text": "        loss.backward()"
+        },
+        {
+          "line": 36,
+          "text": "        opt.step()"
+        },
+        {
+          "line": 37,
+          "text": "    # print(f\"epoch {epoch} loss {loss.item():.4f}\")"
+        },
+        {
+          "line": 38,
+          "text": "    epoch_loss /= len(dataloader)"
+        },
+        {
+          "line": 39,
+          "text": "    print(f\"epoch {epoch} loss {epoch_loss:.4f}\")"
+        },
+        {
+          "line": 40,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "不要把Adam叫作Adam Loss，它是优化器。",
+        "本练习修正日志统计，并不声称已修改上游文件。",
+        "分类CrossEntropy接收logits与类别索引，预测前不要额外softmax。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：按每轮样本量计算独立的平均损失。",
+      "starter": "def epoch_means(epochs):\n    # TODO: 补齐本课的教学计算\n    return []\n",
+      "solution": "def epoch_means(epochs):\n    return [sum(loss*n for loss,n in batches)/sum(n for _,n in batches) for batches in epochs]\n",
+      "tests": "assert epoch_means([[(2,2),(8,1)],[(1,2)]]) == [4,1]\nassert epoch_means([[(3,1),(5,1)]]) == [4]",
+      "hint": "每轮单独计算 sum(loss×n)/sum(n)。",
+      "expected": "两个epoch为[4,1]；等大批次例子为[4]。"
+    },
+    "local": {
+      "command": "python pytorch/math_you_need_for_dl_code/training_loop.py",
+      "requirements": "在仓库根目录运行；需要PyTorch。",
+      "observe": "观察每轮输出loss，同时审查epoch_loss重置位置。",
+      "boundary": "这里未执行完整PyTorch训练；随机数据无固定种子，日志不能当可复现实验结论。"
+    }
+  },
+  {
+    "id": 36,
+    "title": "卷积和池化：小窗口如何压缩图像",
+    "group": "项目课程 · 神经网络",
+    "goal": "计算2×2窗口与卷积核的逐元素乘积和。",
+    "example": "窗口[[1,2],[3,4]]与核[[1,0],[−1,1]]得到1−3+4=2；同窗口最大池化得到4。",
+    "mechanism": "深度学习中的Conv2d通常执行互相关，不翻转核；池化对窗口做固定汇总，不学习卷积权重。",
+    "walk": [
+      {
+        "title": "先算一个窗口",
+        "body": "四个位置逐个对应相乘再相加，不是普通矩阵乘法。"
+      },
+      {
+        "title": "平移同一组权重",
+        "body": "核移动到下一个窗口时仍使用同样的4个参数，这就是权重共享。"
+      },
+      {
+        "title": "预测输出尺寸",
+        "body": "4×4输入、2×2核、padding=1、stride=2，每边输出floor((4+2−2)/2)+1=3。"
+      },
+      {
+        "title": "区分池化",
+        "body": "max pooling取4，不用卷积核；平均池化取2.5。卷积提特征，池化汇总邻域。"
+      }
+    ],
+    "question": "4×4输入按上述参数卷积的输出尺寸是？",
+    "options": [
+      "2×2",
+      "3×3",
+      "4×4"
+    ],
+    "answer": 1,
+    "feedback": "先加两边padding，再减核宽，除stride向下取整，最后加1。",
+    "source": "algorithms/deeplearning/conv2d.py",
+    "demo": "",
+    "code": {
+      "symbol": "def simple_conv2d(input_matrix",
+      "start": 57,
+      "end": 80,
+      "lines": [
+        {
+          "line": 57,
+          "text": "def simple_conv2d(input_matrix, kernel, padding, stride):"
+        },
+        {
+          "line": 58,
+          "text": "    input_height, input_width = input_matrix.shape  # (4, 4)"
+        },
+        {
+          "line": 59,
+          "text": "    kernel_height, kernel_width = kernel.shape  # (2, 2)"
+        },
+        {
+          "line": 60,
+          "text": "    # calculate output height and width"
+        },
+        {
+          "line": 61,
+          "text": "    padded_input = np.pad(input_matrix, pad_width=padding, mode='constant')"
+        },
+        {
+          "line": 62,
+          "text": ""
+        },
+        {
+          "line": 63,
+          "text": "    input_height_padded, input_width_padded = padded_input.shape"
+        },
+        {
+          "line": 64,
+          "text": "    output_height = (input_height_padded - kernel_height) // stride + 1"
+        },
+        {
+          "line": 65,
+          "text": "    output_width = (input_width_padded - kernel_width) // stride + 1"
+        },
+        {
+          "line": 66,
+          "text": ""
+        },
+        {
+          "line": 67,
+          "text": "    # output shape = 3, 3"
+        },
+        {
+          "line": 68,
+          "text": "    output = np.zeros((output_height, output_width))"
+        },
+        {
+          "line": 69,
+          "text": ""
+        },
+        {
+          "line": 70,
+          "text": "    # matrix multiply of kernel to input (basic math)"
+        },
+        {
+          "line": 71,
+          "text": "    for i in range(output_height):"
+        },
+        {
+          "line": 72,
+          "text": "        for j in range(output_width):"
+        },
+        {
+          "line": 73,
+          "text": "            region = padded_input["
+        },
+        {
+          "line": 74,
+          "text": "                i * stride : i * stride + kernel_height,"
+        },
+        {
+          "line": 75,
+          "text": "                j * stride : j * stride + kernel_width,"
+        },
+        {
+          "line": 76,
+          "text": "            ]"
+        },
+        {
+          "line": 77,
+          "text": "            output[i, j] = np.sum(region * kernel)"
+        },
+        {
+          "line": 78,
+          "text": "    return output"
+        },
+        {
+          "line": 79,
+          "text": ""
+        },
+        {
+          "line": 80,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "PyTorch对照实现没关闭默认bias，因此不能期待与无bias NumPy结果严格相同。",
+        "源码按region*kernel求和，没有翻转核。",
+        "练习只算单窗口，完整滑动、padding和张量通道需另验。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：计算2×2窗口与卷积核的逐元素乘积和。",
+      "starter": "def window_dot(window, kernel):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def window_dot(window, kernel):\n    return sum(a*b for row,krow in zip(window,kernel) for a,b in zip(row,krow))\n",
+      "tests": "assert window_dot([[1,2],[3,4]],[[1,0],[-1,1]]) == 2\nassert window_dot([[2,2],[2,2]],[[1,1],[1,1]]) == 8",
+      "hint": "展开四次乘法再相加。",
+      "expected": "两个窗口输出2与8。"
+    }
+  },
+  {
+    "id": 37,
+    "title": "RNN：把上一时刻带到下一时刻",
+    "group": "项目课程 · 神经网络",
+    "goal": "实现单维递归状态更新。",
+    "example": "输入[1,0]、h0=0、Wx=Wh=1：h1=tanh(1)≈0.7616，h2=tanh(0.7616)≈0.6420。",
+    "mechanism": "同一组参数在每个时间步重复使用，隐藏状态是先前输入的压缩表示；不是把所有输入求平均。",
+    "walk": [
+      {
+        "title": "从零开始",
+        "body": "h0=0表示尚无历史，本步只看到输入1。"
+      },
+      {
+        "title": "写入第一步",
+        "body": "h1=tanh(1+0)=0.7616，非线性限制状态幅度。"
+      },
+      {
+        "title": "零输入也能留下历史",
+        "body": "第二个输入虽为0，Wh×h1仍非零，所以h2约0.642。"
+      },
+      {
+        "title": "观察长期传播",
+        "body": "反复乘Wh与tanh导数可能让梯度变小或变大；门控网络试图改善状态传递。"
+      }
+    ],
+    "question": "第二步输入为0，状态一定为0吗？",
+    "options": [
+      "是",
+      "否，上一状态仍会参与计算",
+      "只看序列长度"
+    ],
+    "answer": 1,
+    "feedback": "递归连接Wh×h把上一时刻的信息传入当前。",
+    "source": "algorithms/deeplearning/rnn.py",
+    "demo": "",
+    "code": {
+      "symbol": "def rnn_forward",
+      "start": 5,
+      "end": 16,
+      "lines": [
+        {
+          "line": 5,
+          "text": "def rnn_forward(input_sequence: list[list[float]], initial_hidden_state: list[float], Wx: list[list[float]], Wh: list[list[float]], b: list[float]) -> list[float]:"
+        },
+        {
+          "line": 6,
+          "text": "\t# Your code here"
+        },
+        {
+          "line": 7,
+          "text": "    x_seq = np.array(input_sequence)"
+        },
+        {
+          "line": 8,
+          "text": "    h_t = np.array(initial_hidden_state)"
+        },
+        {
+          "line": 9,
+          "text": "    Wx, Wh, b = np.array(Wx), np.array(Wh), np.array(b)"
+        },
+        {
+          "line": 10,
+          "text": "    for t in range(len(x_seq)):"
+        },
+        {
+          "line": 11,
+          "text": "        x_t = x_seq[t]"
+        },
+        {
+          "line": 12,
+          "text": "\t\th_t = np.tanh(Wx @ x_t + Wh @ h_t + b)"
+        },
+        {
+          "line": 13,
+          "text": ""
+        },
+        {
+          "line": 14,
+          "text": ""
+        },
+        {
+          "line": 15,
+          "text": "\treturn h_t.tolist()"
+        },
+        {
+          "line": 16,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "源码rnn.py缩进混用了tab和空格，需要先修复才能直接导入。",
+        "练习是单维数学版本，不提供原文件可运行保证。",
+        "改变输入顺序可改变最终状态，这一点不同于求平均。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：实现单维递归状态更新。",
+      "starter": "def recurrent(xs, wx=1, wh=1, bias=0):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def recurrent(xs, wx=1, wh=1, bias=0):\n    import math\n    h = 0.0\n    for x in xs:\n        h = math.tanh(wx*x+wh*h+bias)\n    return h\n",
+      "tests": "import math\nassert abs(recurrent([1,0])-math.tanh(math.tanh(1)))<1e-12\nassert recurrent([0,0]) == 0",
+      "hint": "必须在循环内更新h，下一步用新值。",
+      "expected": "[1,0]约0.642；[0,0]为0。"
+    }
+  },
+  {
+    "id": 38,
+    "title": "LSTM：用三道门控制记忆",
+    "group": "项目课程 · 神经网络",
+    "goal": "计算给定门值下的LSTM细胞状态和隐藏输出。",
+    "example": "旧记忆2，遗忘门0.5，输入门0.25，候选记忆0.8：新记忆1.2；输出门0.5时隐藏值约0.4168。",
+    "mechanism": "遗忘门保留旧记忆，输入门写入候选值，输出门控制可见状态；门值来自sigmoid，并非人工永久固定。",
+    "walk": [
+      {
+        "title": "留下旧的一部分",
+        "body": "0.5×2=1，不是把旧记忆全部清空。"
+      },
+      {
+        "title": "加入新的证据",
+        "body": "0.25×0.8=0.2；新细胞状态c=1+0.2=1.2。"
+      },
+      {
+        "title": "决定显示多少",
+        "body": "h=0.5×tanh(1.2)≈0.4168；c与h是不同变量。"
+      },
+      {
+        "title": "对照边界",
+        "body": "f=1、i=0时c保持不变；f=0、i=1时c直接写入候选值。"
+      }
+    ],
+    "question": "只保留旧记忆应设置哪组门值？",
+    "options": [
+      "f=0,i=1",
+      "f=1,i=0",
+      "f=0,i=0"
+    ],
+    "answer": 1,
+    "feedback": "遗忘门1让旧记忆通过，输入门0禁止写入。",
+    "source": "algorithms/deeplearning/lstm.py",
+    "demo": "",
+    "code": {
+      "symbol": "# Gates",
+      "start": 44,
+      "end": 58,
+      "lines": [
+        {
+          "line": 44,
+          "text": "            # Gates"
+        },
+        {
+          "line": 45,
+          "text": "            f_t = self.sigmoid(self.Wf @ concat + self.bf)      # forget gate"
+        },
+        {
+          "line": 46,
+          "text": "            i_t = self.sigmoid(self.Wi @ concat + self.bi)      # input gate"
+        },
+        {
+          "line": 47,
+          "text": "            c_hat = np.tanh(self.Wc @ concat + self.bc)         # candidate cell"
+        },
+        {
+          "line": 48,
+          "text": "            o_t = self.sigmoid(self.Wo @ concat + self.bo)      # output gate"
+        },
+        {
+          "line": 49,
+          "text": ""
+        },
+        {
+          "line": 50,
+          "text": "            # Cell state update"
+        },
+        {
+          "line": 51,
+          "text": "            c_prev = f_t * c_prev + i_t * c_hat"
+        },
+        {
+          "line": 52,
+          "text": ""
+        },
+        {
+          "line": 53,
+          "text": "            # Hidden state update"
+        },
+        {
+          "line": 54,
+          "text": "            h_prev = o_t * np.tanh(c_prev)"
+        },
+        {
+          "line": 55,
+          "text": ""
+        },
+        {
+          "line": 56,
+          "text": "            hidden_states.append(h_prev)"
+        },
+        {
+          "line": 57,
+          "text": ""
+        },
+        {
+          "line": 58,
+          "text": "        return hidden_states, h_prev, c_prev"
+        }
+      ],
+      "notes": [
+        "练习把门的计算与状态更新拆开，便于手算。",
+        "源码concat拼接旧h和当前x，再为每个门使用不同矩阵。",
+        "LSTM缓解长依赖问题，但不保证无限长序列记忆。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：计算给定门值下的LSTM细胞状态和隐藏输出。",
+      "starter": "def cell(previous, forget, incoming, candidate, output):\n    # TODO: 补齐本课的教学计算\n    return (0, 0)\n",
+      "solution": "def cell(previous, forget, incoming, candidate, output):\n    import math\n    c = forget*previous+incoming*candidate\n    return c, output*math.tanh(c)\n",
+      "tests": "import math\nc,h=cell(2,0.5,0.25,0.8,0.5)\nassert abs(c-1.2)<1e-12 and abs(h-0.5*math.tanh(1.2))<1e-12\nassert cell(2,1,0,0.8,0)[0] == 2",
+      "hint": "先算c，再对c使用tanh并乘输出门。",
+      "expected": "新记忆1.2，输出约0.4168；关闭写入时记忆保持2。"
+    }
+  },
+  {
+    "id": 39,
+    "title": "Embedding 与位置：同一个字为何能有不同输入",
+    "group": "项目课程 · 神经网络",
+    "goal": "查token向量并逐位置加上位置向量。",
+    "example": "token 1查得[2,3]；位置0是[0,1]，合成[2,4]；同token到位置1加[1,0]得到[3,3]。",
+    "mechanism": "token ID只是索引，不是大小有意义的数值特征；可学习embedding矩阵把索引映射到向量，位置表提供序列位置。",
+    "walk": [
+      {
+        "title": "先查表",
+        "body": "输入token列表[1,1]两次都查embedding第1行[2,3]。"
+      },
+      {
+        "title": "再区分位置",
+        "body": "第0个token加[0,1]，第1个加[1,0]，所以输入向量不同。"
+      },
+      {
+        "title": "追踪训练更新",
+        "body": "梯度会更新被访问的token行与位置行；离散索引本身不求导。"
+      },
+      {
+        "title": "读模型边界",
+        "body": "MicroGPT用学习的位置表wpe；不要把别处的正弦位置编码实现说成这里实际使用的机制。"
+      }
+    ],
+    "question": "token ID 8 是否比 ID 4 语义强两倍？",
+    "options": [
+      "是",
+      "只在英文中成立",
+      "否，ID只是查表索引"
+    ],
+    "answer": 2,
+    "feedback": "语义关系来自学出的向量，编号大小没有这种含义。",
+    "source": "models/microgpt.py",
+    "demo": "",
+    "code": {
+      "symbol": "def gpt(tokens):",
+      "start": 251,
+      "end": 259,
+      "lines": [
+        {
+          "line": 251,
+          "text": "def gpt(tokens):"
+        },
+        {
+          "line": 252,
+          "text": "    \"\"\"Full forward pass for a list of token IDs."
+        },
+        {
+          "line": 253,
+          "text": ""
+        },
+        {
+          "line": 254,
+          "text": "    Returns a list of logit vectors (one per input position)."
+        },
+        {
+          "line": 255,
+          "text": "    The logits at position t predict the next token given tokens[0..t]."
+        },
+        {
+          "line": 256,
+          "text": "    \"\"\""
+        },
+        {
+          "line": 257,
+          "text": "    # Build input embeddings: sum token embedding + position embedding for each position"
+        },
+        {
+          "line": 258,
+          "text": "    x_seq = [[te + pe for te, pe in zip(wte[tok], wpe[pos])] for pos, tok in enumerate(tokens)]"
+        },
+        {
+          "line": 259,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "zip假定token向量和位置向量宽度一致，工程代码应验证。",
+        "位置数量受block_size限制，不能无限追加。",
+        "讲解输入构造不代表执行了MicroGPT训练。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：查token向量并逐位置加上位置向量。",
+      "starter": "def embed(tokens, table, positions):\n    # TODO: 补齐本课的教学计算\n    return []\n",
+      "solution": "def embed(tokens, table, positions):\n    return [[a+b for a,b in zip(table[token],positions[i])] for i,token in enumerate(tokens)]\n",
+      "tests": "assert embed([1,1],[[0,0],[2,3]],[[0,1],[1,0]]) == [[2,4],[3,3]]\nassert embed([0],[[4,5]],[[0,0]]) == [[4,5]]",
+      "hint": "用enumerate拿位置，用token拿词表行。",
+      "expected": "重复token得到不同的位置相关向量。"
+    }
+  },
+  {
+    "id": 40,
+    "title": "Attention 与多头：先算权重，再混合信息",
+    "group": "项目课程 · 神经网络",
+    "goal": "对分数做稳定softmax并加权求值。",
+    "example": "两个分数[0,ln(3)]产生权重[0.25,0.75]；值[2,6]的混合结果为5。",
+    "mechanism": "Q和K的点积经sqrt(head_dim)缩放后形成分数；softmax使权重和为1，再加权V。多头分别计算后拼接并投影。",
+    "walk": [
+      {
+        "title": "分数先变成正数",
+        "body": "exp(0)=1，exp(ln3)=3，总量4。"
+      },
+      {
+        "title": "变成可比较的权重",
+        "body": "除总量4得到0.25和0.75；不是直接用分数乘V。"
+      },
+      {
+        "title": "把内容取回来",
+        "body": "0.25×2+0.75×6=5，结果是值向量的加权组合。"
+      },
+      {
+        "title": "拆成多头",
+        "body": "维度8分成2头，每头4维，缩放分母是sqrt(4)=2；拼接后仍回到8维，再做输出投影。"
+      }
+    ],
+    "question": "softmax([0,ln3])的第二个权重是多少？",
+    "options": [
+      "0.25",
+      "0.75",
+      "3"
+    ],
+    "answer": 1,
+    "feedback": "先指数化得到1和3，再除以它们的和4。",
+    "source": "models/microgpt.py",
+    "demo": "",
+    "code": {
+      "symbol": "def softmax(logits):",
+      "start": 171,
+      "end": 179,
+      "lines": [
+        {
+          "line": 171,
+          "text": "def softmax(logits):"
+        },
+        {
+          "line": 172,
+          "text": "    # Subtract the max logit before exponentiating to avoid numerical overflow."
+        },
+        {
+          "line": 173,
+          "text": "    # The result is the same because e^(x-c) / sum(e^(x-c)) == e^x / sum(e^x)."
+        },
+        {
+          "line": 174,
+          "text": "    max_logit = max(l.data for l in logits)"
+        },
+        {
+          "line": 175,
+          "text": "    exp_logits = [(logit - max_logit).exp() for logit in logits]"
+        },
+        {
+          "line": 176,
+          "text": "    sum_exp_logits = sum(exp_logits)"
+        },
+        {
+          "line": 177,
+          "text": "    return [exp_logit / sum_exp_logits for exp_logit in exp_logits]"
+        },
+        {
+          "line": 178,
+          "text": ""
+        },
+        {
+          "line": 179,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "源码softmax先减最大logit以避免指数溢出。",
+        "本课实验输入已是缩放后的分数，不重复除sqrt(d)。",
+        "多个头不是把结果简单平均；源码拼接后经wo投影。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：对分数做稳定softmax并加权求值。",
+      "starter": "def attend(scores, values):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def attend(scores, values):\n    import math\n    peak = max(scores)\n    weights = [math.exp(s-peak) for s in scores]\n    return sum(w*v for w,v in zip(weights,values))/sum(weights)\n",
+      "tests": "import math\nassert abs(attend([0,math.log(3)],[2,6])-5)<1e-12\nassert attend([1000,1000],[2,4]) == 3",
+      "hint": "先减最大分数；用加权和除权重总量。",
+      "expected": "首例5；大分数例不溢出且为3。"
+    }
+  },
+  {
+    "id": 41,
+    "title": "Encoder 与 Decoder：谁可以看见未来",
+    "group": "项目课程 · 神经网络",
+    "goal": "生成允许关注当前位置及过去的因果掩码。",
+    "example": "长度3的序列中，第0行只能看0，第1行看0、1，第2行可看0、1、2。",
+    "mechanism": "Encoder通常能双向读取输入；自回归Decoder用因果自注意力屏蔽未来；编码器—解码器结构还用cross-attention读取源序列。",
+    "walk": [
+      {
+        "title": "画出3×3可见表",
+        "body": "允许矩阵为[[1,0,0],[1,1,0],[1,1,1]]，行表示查询位置。"
+      },
+      {
+        "title": "屏蔽未来分数",
+        "body": "第0行的第1、2列设为负无穷，softmax后权重为0。"
+      },
+      {
+        "title": "分清两类注意力",
+        "body": "self-attention的Q/K/V来自目标序列；cross-attention的Q来自目标，K/V来自memory。"
+      },
+      {
+        "title": "检查实现范围",
+        "body": "这个示例memory只是embedding(src_ids)，不是实际encoder的输出；讲原理时要说清楚这层占位。"
+      }
+    ],
+    "question": "预测第2个token时可以偷看第3个token吗？",
+    "options": [
+      "可以，训练才快",
+      "不可以，因果掩码必须禁止",
+      "只要不用梯度就可以"
+    ],
+    "answer": 1,
+    "feedback": "看到未来目标会让训练任务泄漏，生成时无法获得同样信息。",
+    "source": "pytorch/math_you_need_for_dl_code/transformer_decoder.py",
+    "demo": "",
+    "code": {
+      "symbol": "def causal_mask(L):",
+      "start": 244,
+      "end": 263,
+      "lines": [
+        {
+          "line": 244,
+          "text": "def causal_mask(L):"
+        },
+        {
+          "line": 245,
+          "text": "    return torch.tril(torch.ones(L, L)).bool()"
+        },
+        {
+          "line": 246,
+          "text": ""
+        },
+        {
+          "line": 247,
+          "text": "# ---- Sublayer 1: Masked Self-Attention ----"
+        },
+        {
+          "line": 248,
+          "text": "ln1 = nn.LayerNorm(d_model)"
+        },
+        {
+          "line": 249,
+          "text": ""
+        },
+        {
+          "line": 250,
+          "text": "Wq = nn.Linear(d_model, d_model, bias=False)"
+        },
+        {
+          "line": 251,
+          "text": "Wk = nn.Linear(d_model, d_model, bias=False)"
+        },
+        {
+          "line": 252,
+          "text": "Wv = nn.Linear(d_model, d_model, bias=False)"
+        },
+        {
+          "line": 253,
+          "text": "Wo = nn.Linear(d_model, d_model, bias=False)"
+        },
+        {
+          "line": 254,
+          "text": ""
+        },
+        {
+          "line": 255,
+          "text": "x_norm = ln1(x)"
+        },
+        {
+          "line": 256,
+          "text": "Q = split_heads(Wq(x_norm))"
+        },
+        {
+          "line": 257,
+          "text": "K = split_heads(Wk(x_norm))"
+        },
+        {
+          "line": 258,
+          "text": "V = split_heads(Wv(x_norm))"
+        },
+        {
+          "line": 259,
+          "text": ""
+        },
+        {
+          "line": 260,
+          "text": "scores = torch.matmul(Q, K.transpose(-2, -1)) / math.sqrt(head_dim)"
+        },
+        {
+          "line": 261,
+          "text": "scores = scores.masked_fill(~causal_mask(tgt_len), float(\"-inf\"))"
+        },
+        {
+          "line": 262,
+          "text": ""
+        },
+        {
+          "line": 263,
+          "text": "weights = F.softmax(scores, dim=-1)"
+        }
+      ],
+      "notes": [
+        "源码causal_mask返回True表示允许，masked_fill前用了取反。",
+        "Decoder-only GPT通常没有encoder cross-attention。",
+        "离散tokenizer不在可微梯度路径中；源码说明里的箭头不能照字面理解。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：生成允许关注当前位置及过去的因果掩码。",
+      "starter": "def causal(length):\n    # TODO: 补齐本课的教学计算\n    return []\n",
+      "solution": "def causal(length):\n    return [[j<=i for j in range(length)] for i in range(length)]\n",
+      "tests": "assert causal(3) == [[True,False,False],[True,True,False],[True,True,True]]\nassert causal(1) == [[True]]",
+      "hint": "比较列j是否不大于行i。",
+      "expected": "长度3为下三角布尔矩阵；长度1只允许自身。"
+    }
+  },
+  {
+    "id": 42,
+    "title": "MicroGPT：从下一个字符损失到名字生成",
+    "group": "项目课程 · 模型与论文",
+    "goal": "计算真实下一token概率的平均负对数似然。",
+    "example": "两处真实字符概率是0.5与0.25，损失为(ln2+ln4)/2≈1.0397；全部预测正确概率为1时损失为0。",
+    "mechanism": "训练把token序列错开一位形成输入与目标，平均各位置交叉熵，再反传并以vanilla SGD更新；生成则从BOS逐个采样。",
+    "walk": [
+      {
+        "title": "把序列错开一格",
+        "body": "[BOS,a,b,BOS]变成输入[BOS,a,b]，目标[a,b,BOS]，每一位置只负责下一个字符。"
+      },
+      {
+        "title": "只取真实目标概率",
+        "body": "目标a对应概率0.5，贡献−ln0.5；无需把所有类别概率相加当损失。"
+      },
+      {
+        "title": "先平均再反传",
+        "body": "源码先对文档位置平均，再对batch平均；不同长度文档因此具有相同文档权重。"
+      },
+      {
+        "title": "生成换一种过程",
+        "body": "从BOS开始，logits除temperature=0.5再softmax采样；遇BOS停止，不是读取真实答案。"
+      }
+    ],
+    "question": "此版本MicroGPT实际使用什么参数更新？",
+    "options": [
+      "Adam",
+      "vanilla SGD",
+      "没有训练"
+    ],
+    "answer": 1,
+    "feedback": "以源代码param.data -= learning_rate * param.grad为准，不依据README概述推断Adam。",
+    "source": "models/microgpt.py",
+    "demo": "",
+    "code": {
+      "symbol": "# input:  [BOS, t1",
+      "start": 296,
+      "end": 316,
+      "lines": [
+        {
+          "line": 296,
+          "text": "        # input:  [BOS, t1, t2, ..., tn]   - what the model sees"
+        },
+        {
+          "line": 297,
+          "text": "        # target: [t1,  t2, ..., tn, BOS]  - what it should predict at each step"
+        },
+        {
+          "line": 298,
+          "text": "        input_tokens = tokens[:-1]"
+        },
+        {
+          "line": 299,
+          "text": "        target_tokens = tokens[1:]"
+        },
+        {
+          "line": 300,
+          "text": ""
+        },
+        {
+          "line": 301,
+          "text": "        logits_seq = gpt(input_tokens)  # one logit vector per input position"
+        },
+        {
+          "line": 302,
+          "text": ""
+        },
+        {
+          "line": 303,
+          "text": "        # Cross-entropy loss averaged over all positions in this document"
+        },
+        {
+          "line": 304,
+          "text": "        loss = Value(0.0)"
+        },
+        {
+          "line": 305,
+          "text": "        for logits, target in zip(logits_seq, target_tokens):"
+        },
+        {
+          "line": 306,
+          "text": "            probs = softmax(logits)"
+        },
+        {
+          "line": 307,
+          "text": "            loss = loss + (-probs[target].log())  # negative log-likelihood"
+        },
+        {
+          "line": 308,
+          "text": "        total_loss = total_loss + loss / len(logits_seq)"
+        },
+        {
+          "line": 309,
+          "text": ""
+        },
+        {
+          "line": 310,
+          "text": "    avg_loss = total_loss / batch_size"
+        },
+        {
+          "line": 311,
+          "text": "    avg_loss.backward()  # compute dLoss/d(every parameter)"
+        },
+        {
+          "line": 312,
+          "text": ""
+        },
+        {
+          "line": 313,
+          "text": "    # SGD update: move each parameter a small step opposite to its gradient"
+        },
+        {
+          "line": 314,
+          "text": "    for param in params:"
+        },
+        {
+          "line": 315,
+          "text": "        param.data -= learning_rate * param.grad"
+        },
+        {
+          "line": 316,
+          "text": "        param.grad = 0  # reset gradient so it doesn't accumulate into next step"
+        }
+      ],
+      "notes": [
+        "脚本顶层会下载names.txt并开始训练，import也有副作用。",
+        "生成名字不是对训练质量、隐私或泛化的保证。",
+        "练习使用math.log精确公式；源码log内部加1e-10作数值保护。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：计算真实下一token概率的平均负对数似然。",
+      "starter": "def next_token_loss(probabilities):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def next_token_loss(probabilities):\n    import math\n    return -sum(math.log(p) for p in probabilities)/len(probabilities)\n",
+      "tests": "import math\nassert abs(next_token_loss([0.5,0.25])-1.5*math.log(2))<1e-12\nassert next_token_loss([1,1]) == 0",
+      "hint": "逐个取负log，再除位置数。",
+      "expected": "约1.0397与0。"
+    },
+    "local": {
+      "command": "cd models && python microgpt.py",
+      "requirements": "Python标准库、网络和可写目录；纯Python计算可能较慢，无GPU要求。",
+      "observe": "观察Number of docs、训练Loss与Generated names；记录实际用时和数据版本。",
+      "boundary": "该命令会重新下载并覆盖当前目录names.txt并训练；本课程没有自动执行它，不保证损失或样本质量。"
+    }
+  },
+  {
+    "id": 43,
+    "title": "MNIST 从零：784个像素怎样进入分类器",
+    "group": "项目课程 · 模型与论文",
+    "goal": "计算全连接网络参数数目，并核对输入输出尺寸。",
+    "example": "784→30→10网络：第一层784×30+30=23550，第二层30×10+10=310，共23860参数。",
+    "mechanism": "每层权重矩阵是输出维×输入维，偏置一维对应一个输出神经元；784来源于28×28灰度图展平。",
+    "walk": [
+      {
+        "title": "展开一张图",
+        "body": "28行×28列得到784个数，原始0…255像素通常需缩放；网络输入列向量是(784,1)。"
+      },
+      {
+        "title": "第一层变成30维",
+        "body": "W为(30,784)、b为(30,1)，相加激活后形状仍是(30,1)。"
+      },
+      {
+        "title": "末层输出10维",
+        "body": "10个sigmoid输出互不保证和为1，argmax用于选数字，不能直接当校准类别概率。"
+      },
+      {
+        "title": "审查再跑",
+        "body": "源码更新写self.biases而forward读self.bias，偏置更新不会进入预测；从零复现必须先处理这个缺陷。"
+      }
+    ],
+    "question": "这个网络共有多少个参数（含偏置）？",
+    "options": [
+      "23520",
+      "23860",
+      "7840"
+    ],
+    "answer": 1,
+    "feedback": "每层都加上输出神经元个数作为偏置参数。",
+    "source": "models/mnist/from_scratch/network.py",
+    "demo": "",
+    "code": {
+      "symbol": "def forward",
+      "start": 26,
+      "end": 34,
+      "lines": [
+        {
+          "line": 26,
+          "text": "    def forward(self, activation) -> float:"
+        },
+        {
+          "line": 27,
+          "text": "        ''' Return output of neural network '''"
+        },
+        {
+          "line": 28,
+          "text": "        for b, w in zip(self.bias, self.weights):"
+        },
+        {
+          "line": 29,
+          "text": "            activation = self.sigmoid(np.dot(w, activation) + b) # sigmoid(wx + b) (wx = dot product if you think about how matrix works)"
+        },
+        {
+          "line": 30,
+          "text": "        return activation"
+        },
+        {
+          "line": 31,
+          "text": ""
+        },
+        {
+          "line": 32,
+          "text": "    def SGD(self, training_data, epochs, mini_batch_size, learning_rate, test_data=None):"
+        },
+        {
+          "line": 33,
+          "text": "        \"\"\""
+        },
+        {
+          "line": 34,
+          "text": "        Train the neural network using mini-batch stochastic gradient descent.  "
+        }
+      ],
+      "notes": [
+        "load_data_wrapper默认相对cwd读取data/mnist.pkl.gz。",
+        "network.py还有未提供test_data时accuracy_percentage未定义的风险。",
+        "教学参数计数不是上游MNIST训练成功证据。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：计算全连接网络参数数目，并核对输入输出尺寸。",
+      "starter": "def parameter_count(sizes):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def parameter_count(sizes):\n    return sum(a*b+b for a,b in zip(sizes,sizes[1:]))\n",
+      "tests": "assert parameter_count([784,30,10]) == 23860\nassert parameter_count([2,3,1]) == 13",
+      "hint": "对每对相邻层算输入×输出+输出。",
+      "expected": "23860与13。"
+    },
+    "local": {
+      "command": "cd models/mnist/from_scratch && python run.py",
+      "requirements": "NumPy、Pillow；当前目录data/mnist.pkl.gz；可选data/sample_digit.jpg。",
+      "observe": "检查数据路径日志、每轮正确数/总数、单图预测前处理。",
+      "boundary": "源文件存在偏置更新命名问题；命令入口已核对，但未执行训练，不承诺准确率。"
+    }
+  },
+  {
+    "id": 44,
+    "title": "同一MNIST任务：PyTorch与TensorFlow怎样对齐",
+    "group": "项目课程 · 模型与论文",
+    "goal": "在相同logits上核对索引标签与one-hot交叉熵一致。",
+    "example": "logits=[0,ln3]对应概率[0.25,0.75]；类别1与one-hot[0,1]应都得到−ln0.75。",
+    "mechanism": "PyTorch本例输出原始logits、CrossEntropyLoss接收整数类别；TensorFlow notebook末层softmax、categorical_crossentropy接收one-hot。接口不同，任务可以相同。",
+    "walk": [
+      {
+        "title": "先对齐图像轴",
+        "body": "PyTorch输入NCHW：(N,1,28,28)；TensorFlow notebook用NHWC：(N,28,28,1)。"
+      },
+      {
+        "title": "核对预处理",
+        "body": "PyTorch先除255再按0.1307/0.3081标准化；TF notebook只除255，因此当前上游不是严格公平对照。"
+      },
+      {
+        "title": "核对输出和标签",
+        "body": "PyTorch logits配整数；TF概率配one-hot。把softmax再塞给PyTorch CrossEntropy会多做一次归一化。"
+      },
+      {
+        "title": "控制比较条件",
+        "body": "固定数据拆分、初始化策略、epoch、batch、预处理和设备再比较；加载旧checkpoint不能冒充新训练。"
+      }
+    ],
+    "question": "PyTorch本例CrossEntropyLoss应接收哪种输出？",
+    "options": [
+      "softmax概率再做一次softmax",
+      "原始logits",
+      "argmax类别编号"
+    ],
+    "answer": 1,
+    "feedback": "CrossEntropy内部结合log-softmax与NLL，保留logits可稳定计算。",
+    "source": "models/mnist/pytorch/torchnn.py",
+    "demo": "",
+    "code": {
+      "symbol": "self.model = nn.Sequential(",
+      "start": 32,
+      "end": 44,
+      "lines": [
+        {
+          "line": 32,
+          "text": "        self.model = nn.Sequential("
+        },
+        {
+          "line": 33,
+          "text": "            # layers"
+        },
+        {
+          "line": 34,
+          "text": "            nn.Conv2d(1, 32, kernel_size=(3, 3), padding=1), # 1 input, 32 filters, padding to keep 28x28"
+        },
+        {
+          "line": 35,
+          "text": "            nn.ReLU(),"
+        },
+        {
+          "line": 36,
+          "text": "            nn.MaxPool2d(kernel_size=(2, 2)), # Output: (32, 14, 14)"
+        },
+        {
+          "line": 37,
+          "text": "            nn.Conv2d(32, 64, kernel_size=(3, 3), padding=1), # Padding to keep 14x14"
+        },
+        {
+          "line": 38,
+          "text": "            nn.ReLU(),"
+        },
+        {
+          "line": 39,
+          "text": "            nn.MaxPool2d(kernel_size=(2, 2)), # Output: (64, 7, 7)"
+        },
+        {
+          "line": 40,
+          "text": "            nn.Flatten(),"
+        },
+        {
+          "line": 41,
+          "text": "            # Correct flattened size after two 2x2 MaxPools: (28 / 2) / 2 = 7"
+        },
+        {
+          "line": 42,
+          "text": "            # output : 10 numbers (probability)"
+        },
+        {
+          "line": 43,
+          "text": "            nn.Linear(64 * 7 * 7, NUM_CLASSES),"
+        },
+        {
+          "line": 44,
+          "text": "        )"
+        }
+      ],
+      "notes": [
+        "TF真实来源是models/mnist/tensorflow/mnist_TF.ipynb；这里摘录可定位的PyTorch .py。",
+        "两个源码的卷积输出都展平为64×7×7=3136。",
+        "TF notebook加载已有模型时history未定义，绘图单元需按实际分支处理。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：在相同logits上核对索引标签与one-hot交叉熵一致。",
+      "starter": "def classification_loss(logits, target):\n    # TODO: 补齐本课的教学计算\n    return 0\n",
+      "solution": "def classification_loss(logits, target):\n    import math\n    peak = max(logits)\n    log_z = peak+math.log(sum(math.exp(v-peak) for v in logits))\n    if isinstance(target, int):\n        return log_z-logits[target]\n    return sum(weight*(log_z-value) for weight,value in zip(target,logits))\n",
+      "tests": "import math\nassert abs(classification_loss([0,math.log(3)],1)+math.log(0.75))<1e-12\nassert abs(classification_loss([1000,1000],0)-math.log(2))<1e-10\nassert abs(classification_loss([0,math.log(3)],[0,1])-classification_loss([0,math.log(3)],1))<1e-12\nassert abs(classification_loss([1000,1000],[1,0])-math.log(2))<1e-10",
+      "hint": "target可以是类别整数，也可以是与logits同长度的one-hot列表。先算稳定log-sum-exp；整数选对应项，列表对每类损失加权求和。",
+      "expected": "两例约0.28768与0.69315。同一类别使用整数和one-hot表示时，损失必须相同。"
+    },
+    "local": {
+      "command": "python models/mnist/pytorch/torchnn.py",
+      "requirements": "仓库根目录；PyTorch、torchvision、Pillow、matplotlib；下载MNIST的网络与磁盘空间。TF另在Jupyter依次执行models/mnist/tensorflow/mnist_TF.ipynb，需TensorFlow与NumPy。",
+      "observe": "记录是否加载model_state.pt，实际epoch、测试集样本数、预处理及设备。",
+      "boundary": "PyTorch自动选CUDA或CPU；不是必须GPU。未运行任一完整模型，不作速度或准确率胜负判断。"
+    }
+  },
+  {
+    "id": 45,
+    "title": "读ResNet论文：把整条映射拆成残差",
+    "group": "项目课程 · 模型与论文",
+    "goal": "实现残差加法后的ReLU并验证负值边界。",
+    "example": "输入x=[2,−1]、残差分支F(x)=[−0.5,0.2]，相加得[1.5,−0.8]，ReLU后为[1.5,0]。",
+    "mechanism": "残差块学习对输入的修正F(x)，捷径把输入直接送到相加处；需要降采样时捷径也必须投影以对齐形状。",
+    "walk": [
+      {
+        "title": "先看无需修正的情况",
+        "body": "F(x)=0时，捷径仍能传递x；在本实现块末尾还经过ReLU。"
+      },
+      {
+        "title": "计算一个修正",
+        "body": "2加−0.5得到1.5，−1加0.2得到−0.8，激活裁成0。"
+      },
+      {
+        "title": "核对形状",
+        "body": "通道数或stride变了就不能直接相加，源码downsample分支负责改变捷径。"
+      },
+      {
+        "title": "回到论文贡献",
+        "body": "He等人的残差学习讨论深层网络优化；仓库CIFAR10训练脚本不是论文ImageNet结果复现，注释层数也要以构造[3,4,6,3]核实。"
+      }
+    ],
+    "question": "输入通道数改变后残差相加前需要什么？",
+    "options": [
+      "忽略形状",
+      "删除输入",
+      "用投影/降采样对齐捷径形状"
+    ],
+    "answer": 2,
+    "feedback": "逐元素相加要求形状兼容；源码通过downsample处理。",
+    "source": "papers/resnet/resnet34_scratch.py",
+    "demo": "",
+    "code": {
+      "symbol": "def forward(self, x):",
+      "start": 79,
+      "end": 88,
+      "lines": [
+        {
+          "line": 79,
+          "text": "    def forward(self, x):"
+        },
+        {
+          "line": 80,
+          "text": "        residual = x # input"
+        },
+        {
+          "line": 81,
+          "text": "        out = self.conv1(x)"
+        },
+        {
+          "line": 82,
+          "text": "        out = self.conv2(out)"
+        },
+        {
+          "line": 83,
+          "text": "        if self.downsample:"
+        },
+        {
+          "line": 84,
+          "text": "            residual = self.downsample(x)"
+        },
+        {
+          "line": 85,
+          "text": "        out = out + residual"
+        },
+        {
+          "line": 86,
+          "text": "        out = self.relu(out)"
+        },
+        {
+          "line": 87,
+          "text": "        return out"
+        },
+        {
+          "line": 88,
+          "text": ""
+        }
+      ],
+      "notes": [
+        "源码第二个卷积序列里也有ReLU；不能把此代码逐行等同原论文块布局。",
+        "块数量实例实际为[3,4,6,3]，顶部注释[3,3,6,3]不一致。",
+        "论文入口在papers/resnet/resnet.md；实作与论文实验条件分开报告。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：实现残差加法后的ReLU并验证负值边界。",
+      "starter": "def residual_relu(x, correction):\n    # TODO: 补齐本课的教学计算\n    return []\n",
+      "solution": "def residual_relu(x, correction):\n    return [max(0,a+b) for a,b in zip(x,correction)]\n",
+      "tests": "assert residual_relu([2,-1],[-0.5,0.2]) == [1.5,0]\nassert residual_relu([1,3],[0,0]) == [1,3]",
+      "hint": "先逐元素相加，再对和取max(0,值)。",
+      "expected": "得到[1.5,0]，零修正保留正输入。"
+    },
+    "local": {
+      "command": "python papers/resnet/resnet34_scratch.py",
+      "requirements": "PyTorch、torchvision、NumPy、Pillow、tqdm；CIFAR10下载网络、磁盘与较长训练预算。",
+      "observe": "记录实际device、CIFAR10拆分、是否读resnet_scratch.pth、训练和验证准确率。",
+      "boundary": "默认20轮，CPU可很慢；代码示例不等于原论文复现，未执行完整训练。"
+    }
+  },
+  {
+    "id": 46,
+    "title": "读感知机论文：错一次才移动一次边界",
+    "group": "项目课程 · 模型与论文",
+    "goal": "实现一次误分类驱动的感知机参数更新。",
+    "example": "x=[1,2]、y=1、预测0、学习率0.1：权重[0,0]更新为[0.1,0.2]，偏置变0.1。",
+    "mechanism": "感知机用硬阈值做分类，在错误样本上按学习率×(目标−预测)×输入更新权重；这是学习规则，不是通过阶跃函数反传。",
+    "walk": [
+      {
+        "title": "先做硬判断",
+        "body": "源码用z>threshold输出1，等于阈值仍输出0；零权重输入本例先预测0。"
+      },
+      {
+        "title": "只在错时调整",
+        "body": "误差1−0=1，所以每个权重加0.1×对应输入。"
+      },
+      {
+        "title": "预测对就停住",
+        "body": "若y也为0，误差0，权重和偏置都不变。"
+      },
+      {
+        "title": "划出能力边界",
+        "body": "线性可分如AND可由一条直线分开；XOR不能靠单层线性阈值解决。历史论文的整体机制不能等同这个简化类。"
+      }
+    ],
+    "question": "本例预测正确时如何更新？",
+    "options": [
+      "不更新",
+      "仍随机移动",
+      "把权重归零"
+    ],
+    "answer": 0,
+    "feedback": "源码只在y_hat!=y时进入更新分支。",
+    "source": "papers/perceptron/perceptron.py",
+    "demo": "",
+    "code": {
+      "symbol": "# Perceptron learning rule",
+      "start": 41,
+      "end": 55,
+      "lines": [
+        {
+          "line": 41,
+          "text": "                # Perceptron learning rule (only update on misclassification)"
+        },
+        {
+          "line": 42,
+          "text": "                if y_hat != y_train[idx]:"
+        },
+        {
+          "line": 43,
+          "text": "                    update = self.learning_rate * (y_train[idx] - y_hat)"
+        },
+        {
+          "line": 44,
+          "text": "                    self.weights += update * x_i"
+        },
+        {
+          "line": 45,
+          "text": "                    self.bias += update"
+        },
+        {
+          "line": 46,
+          "text": "                    errors += 1"
+        },
+        {
+          "line": 47,
+          "text": ""
+        },
+        {
+          "line": 48,
+          "text": "            # Optional convergence check (stops early if no errors)"
+        },
+        {
+          "line": 49,
+          "text": "            if errors == 0:"
+        },
+        {
+          "line": 50,
+          "text": "                print(f\"Training converged at epoch {epoch}\")"
+        },
+        {
+          "line": 51,
+          "text": "                break"
+        },
+        {
+          "line": 52,
+          "text": ""
+        },
+        {
+          "line": 53,
+          "text": "        return self.weights, self.bias"
+        },
+        {
+          "line": 54,
+          "text": ""
+        },
+        {
+          "line": 55,
+          "text": "    def predict(self, X_test):"
+        }
+      ],
+      "notes": [
+        "论文原件是papers/perceptron/Rosenblatt1958.pdf，代码是现代教学实现。",
+        "源码随机初始化未设种子；收敛epoch不保证相同。",
+        "不要用感知机对XOR失败推断多层神经网络也失败。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：实现一次误分类驱动的感知机参数更新。",
+      "starter": "def perceptron_step(weights, bias, x, target, prediction, rate):\n    # TODO: 补齐本课的教学计算\n    return ([], 0)\n",
+      "solution": "def perceptron_step(weights, bias, x, target, prediction, rate):\n    update = rate*(target-prediction)\n    return [w+update*v for w,v in zip(weights,x)], bias+update\n",
+      "tests": "assert perceptron_step([0,0],0,[1,2],1,0,0.1) == ([0.1,0.2],0.1)\nassert perceptron_step([1,2],3,[2,4],1,1,0.1) == ([1,2],3)",
+      "hint": "先计算统一update，偏置加update，权重乘输入后加。",
+      "expected": "错误样本更新为([0.1,0.2],0.1)；正确样本不变。"
+    },
+    "local": {
+      "command": "python papers/perceptron/perceptron.py",
+      "requirements": "仓库根目录；Python与NumPy；不需要数据下载或GPU。",
+      "observe": "观察AND四个输入的预测、收敛epoch及precision/recall。",
+      "boundary": "脚本已核对入口，未在当前课程验证中执行；随机初始化可能改变轨迹。"
+    }
+  },
+  {
+    "id": 47,
+    "title": "结业复现：提交可以被别人重算的结果",
+    "group": "项目课程 · 模型与论文",
+    "goal": "构建含固定种子、数据指纹和独立测试准确率的微型复现记录。",
+    "example": "测试标签[0,1,1,0]、预测[0,1,0,0]：正确3/4=0.75；同数据同种子应重建同一拆分顺序。",
+    "mechanism": "可复现交付不是一张高准确率截图，而是入口、源码版本、环境、数据指纹、配置、划分和原始结果共同构成的证据。",
+    "walk": [
+      {
+        "title": "先写不变条件",
+        "body": "记录commit、Python/框架版本、CPU/GPU、seed、数据哈希、batch与epoch；模型权重另记哈希。"
+      },
+      {
+        "title": "明确训练与测试职责",
+        "body": "只在训练集更新，验证集调参；测试集最终评估，不反复用测试成绩选择设置。"
+      },
+      {
+        "title": "保留可以重算的分子分母",
+        "body": "报告3正确/4总数=0.75，保留每样本预测；避免只留四舍五入百分比。"
+      },
+      {
+        "title": "独立完成验收",
+        "body": "在新目录按README重跑，比较拆分哈希、日志、指标和预测；若只完成本页教学计算，应明确写未完成全量MNIST复现。"
+      }
+    ],
+    "question": "哪份结业结果最容易被复核？",
+    "options": [
+      "只有99%截图",
+      "代码版本、数据哈希、配置、命令和逐样本结果",
+      "只有生成的模型名"
+    ],
+    "answer": 1,
+    "feedback": "完整证据让别人能检查数据来源、执行条件和指标计算，而非相信结论。",
+    "source": "models/mnist/pytorch/torchnn.py",
+    "demo": "",
+    "code": {
+      "symbol": "def evaluate_model",
+      "start": 77,
+      "end": 93,
+      "lines": [
+        {
+          "line": 77,
+          "text": "def evaluate_model(model, data_loader, device, epoch=None):"
+        },
+        {
+          "line": 78,
+          "text": "    model.eval() "
+        },
+        {
+          "line": 79,
+          "text": "    correct = 0"
+        },
+        {
+          "line": 80,
+          "text": "    total = 0"
+        },
+        {
+          "line": 81,
+          "text": "    with torch.no_grad():"
+        },
+        {
+          "line": 82,
+          "text": "        for x, y in data_loader:"
+        },
+        {
+          "line": 83,
+          "text": "            x, y = x.to(device), y.to(device)"
+        },
+        {
+          "line": 84,
+          "text": "            outputs = model(x)"
+        },
+        {
+          "line": 85,
+          "text": "            _, predicted = torch.max(outputs.data, 1)"
+        },
+        {
+          "line": 86,
+          "text": "            total += y.size(0)"
+        },
+        {
+          "line": 87,
+          "text": "            correct += (predicted == y).sum().item()"
+        },
+        {
+          "line": 88,
+          "text": ""
+        },
+        {
+          "line": 89,
+          "text": "    accuracy = 100 * correct / total"
+        },
+        {
+          "line": 90,
+          "text": "    epoch_str = f\"Epoch {epoch}: \" if epoch is not None else \"\""
+        },
+        {
+          "line": 91,
+          "text": "    print(f\"{epoch_str}Test Accuracy: {accuracy:.2f}% ({correct}/{total})\")"
+        },
+        {
+          "line": 92,
+          "text": "    model.train() # set model back to training mode if it's being used in a loop"
+        },
+        {
+          "line": 93,
+          "text": "    return accuracy"
+        }
+      ],
+      "notes": [
+        "源码evaluate_model切eval并使用no_grad，训练循环开始应切回train。",
+        "固定随机种子不保证跨硬件、框架版本位级一致。",
+        "验收分两层：本页小计算可验证；全量实验需真实命令、日志、用时及环境记录。"
+      ]
+    },
+    "lab": {
+      "goal": "教学计算（Python 标准库，不运行上游完整模型）：构建含固定种子、数据指纹和独立测试准确率的微型复现记录。",
+      "starter": "def report(labels, predictions, seed):\n    # TODO: 补齐本课的教学计算\n    return {\"order\": [], \"data_hash\": \"\", \"accuracy\": 0}\n",
+      "solution": "def report(labels, predictions, seed):\n    import random, hashlib, json\n    order = list(range(len(labels)))\n    random.Random(seed).shuffle(order)\n    digest = hashlib.sha256(json.dumps(labels).encode()).hexdigest()\n    accuracy = sum(a==b for a,b in zip(labels,predictions))/len(labels)\n    return {\"order\":order,\"data_hash\":digest,\"accuracy\":accuracy}\n",
+      "tests": "import hashlib, json\nlabels=[0,1,1,0]\na=report(labels,[0,1,0,0],42)\nassert a[\"accuracy\"] == 0.75\nassert a == report(labels,[0,1,0,0],42)\nassert a[\"order\"] == [2,1,3,0], \"seed=42时四项排列应可复现\"\nassert a[\"data_hash\"] == hashlib.sha256(json.dumps(labels).encode()).hexdigest()\nb=report(labels,[0,1,1,0],7)\nassert b[\"order\"] == [3,1,0,2], \"应真正使用传入的种子\"\nassert b[\"accuracy\"] == 1 and b[\"data_hash\"] == a[\"data_hash\"]\nc=report([1,0],[1,0],7)\nassert sorted(c[\"order\"]) == [0,1]\nassert c[\"data_hash\"] != a[\"data_hash\"]",
+      "hint": "使用局部random.Random(seed)，不要依赖全局随机状态；哈希编码后的数据。",
+      "expected": "同输入同seed的记录一致；准确率0.75和1；不同数据指纹不同。"
+    },
+    "local": {
+      "command": "python models/mnist/pytorch/torchnn.py",
+      "requirements": "使用独立实验目录/副本、记录依赖版本；需要PyTorch、torchvision、Pillow、matplotlib、MNIST数据。",
+      "observe": "保存命令退出码、完整日志、数据与权重哈希、测试预测、设备与用时。",
+      "boundary": "上游脚本尚不足以完整导出此清单，需要学习者补记录；本页测试只验证微型记录函数。"
+    }
+  }
+]
